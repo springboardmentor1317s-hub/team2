@@ -1,5 +1,0 @@
-{
-  "name": "CampusEventHub",
-  "description": "A centralized inter-college event management platform for students to browse and register for events, and for colleges to manage listings.",
-  "requestFramePermissions": []
-}
