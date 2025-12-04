@@ -136,18 +136,27 @@ const Layout: React.FC<{
         );
     };
 
+    // Determine background based on route
+    const getBgClass = () => {
+        if (location.pathname.includes('dashboard')) {
+            return 'bg-slate-100 bg-dot-pattern'; // Admin/Dashboard: Dots on Slate
+        }
+        // Fresh Blue/Indigo Gradient for Events - Clean and Distinct
+        return 'bg-gradient-to-br from-indigo-50 via-blue-50 to-slate-50'; 
+    };
+
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col">
+        <div className={`min-h-screen ${getBgClass()} flex flex-col transition-all duration-300`}>
             {/* Navbar */}
-            <header className="bg-white border-b border-gray-200 sticky top-0 z-30">
+            <header className="bg-white/90 backdrop-blur-md border-b border-gray-200 sticky top-0 z-30 shadow-sm">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between h-16">
                         <div className="flex items-center gap-8">
-                            <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
-                                <div className="bg-indigo-600 p-1.5 rounded-lg">
+                            <div className="flex items-center gap-2 cursor-pointer group" onClick={() => navigate('/')}>
+                                <div className="bg-gradient-to-tr from-indigo-600 to-purple-600 p-1.5 rounded-lg group-hover:shadow-lg transition-shadow">
                                     <Calendar className="w-5 h-5 text-white" />
                                 </div>
-                                <span className="font-bold text-xl text-gray-900 hidden sm:block">CampusEventHub</span>
+                                <span className="font-bold text-xl bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 hidden sm:block">CampusEventHub</span>
                             </div>
                             
                             <nav className="hidden md:flex items-center gap-1">
@@ -157,7 +166,7 @@ const Layout: React.FC<{
                         </div>
 
                         <div className="flex items-center gap-4">
-                            <button className="p-2 text-gray-500 hover:bg-gray-100 rounded-full relative">
+                            <button className="p-2 text-gray-500 hover:bg-gray-100 rounded-full relative transition-colors">
                                 <Bell className="w-5 h-5" />
                                 <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
                             </button>
@@ -167,7 +176,7 @@ const Layout: React.FC<{
                                     <p className="text-sm font-medium text-gray-900">{user.name}</p>
                                     <p className="text-xs text-gray-500 capitalize">{user.role.replace('_', ' ')}</p>
                                 </div>
-                                <div className="h-9 w-9 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-bold border border-indigo-200">
+                                <div className="h-9 w-9 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full flex items-center justify-center text-indigo-700 font-bold border border-indigo-200 shadow-sm">
                                     {user.name.charAt(0)}
                                 </div>
                                 <button 
@@ -215,7 +224,7 @@ const Layout: React.FC<{
             </header>
 
             {/* Main Content */}
-            <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
                 {children}
             </main>
         </div>
@@ -262,33 +271,46 @@ const EventsPage: React.FC<{
     const isRegistered = (eventId: string) => registrations.some(r => r.eventId === eventId && r.userId === user.id);
 
     return (
-        <div className="space-y-6">
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                <div className="mb-6">
-                    <h1 className="text-2xl font-bold text-gray-900">All Events</h1>
-                    <p className="text-gray-500 mt-1">Discover and register for exciting inter-college events</p>
-                </div>
-
-                <div className="space-y-4">
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                        <input 
-                            type="text" 
-                            placeholder="Search events..." 
-                            className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
+        <div className="space-y-8">
+            {/* Hero / Filter Section */}
+            <div className="relative overflow-hidden bg-white rounded-3xl shadow-xl shadow-indigo-100/50 border border-indigo-50 p-8">
+                {/* Decorative background elements inside the card */}
+                <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-indigo-50 rounded-full blur-3xl opacity-60"></div>
+                <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-64 h-64 bg-purple-50 rounded-full blur-3xl opacity-60"></div>
+                
+                <div className="relative z-10">
+                    <div className="mb-8 text-center sm:text-left">
+                        <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight mb-3">
+                            Discover Events<span className="text-indigo-600">.</span>
+                        </h1>
+                        <p className="text-lg text-gray-500 max-w-2xl">
+                            Browse upcoming hackathons, cultural fests, and sports championships across top universities.
+                        </p>
                     </div>
-                    
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div className="space-y-1">
-                             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-1">
-                                <Filter className="w-3 h-3" /> Event Type
-                             </label>
-                             <div className="relative">
+
+                    <div className="flex flex-col lg:flex-row gap-4">
+                         {/* Search */}
+                         <div className="flex-1 relative group">
+                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                <Search className="h-5 w-5 text-gray-400 group-focus-within:text-indigo-500 transition-colors" />
+                            </div>
+                            <input 
+                                type="text" 
+                                className="block w-full pl-11 pr-4 py-3.5 bg-gray-50 border-transparent text-gray-900 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all shadow-sm group-hover:bg-white group-hover:shadow-md"
+                                placeholder="Search events, colleges, or topics..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                        
+                        {/* Filters Row */}
+                        <div className="flex flex-col sm:flex-row gap-3">
+                            <div className="relative group">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <Filter className="h-4 w-4 text-gray-500 group-hover:text-indigo-500 transition-colors" />
+                                </div>
                                 <select 
-                                    className="w-full appearance-none bg-gray-50 border border-gray-200 text-gray-700 py-2.5 px-4 pr-8 rounded-lg leading-tight focus:outline-none focus:bg-white focus:border-indigo-500"
+                                    className="appearance-none bg-gray-50 hover:bg-white border-transparent py-3.5 pl-10 pr-10 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white shadow-sm transition-all cursor-pointer font-medium text-gray-700 w-full sm:w-auto hover:shadow-md"
                                     value={selectedCategory}
                                     onChange={(e) => setSelectedCategory(e.target.value)}
                                 >
@@ -298,19 +320,14 @@ const EventsPage: React.FC<{
                                     <option value="sports">Sports</option>
                                     <option value="workshop">Workshop</option>
                                 </select>
-                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                                    <ChevronDown className="w-4 h-4" />
+                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+                                    <ChevronDown className="h-4 w-4" />
                                 </div>
-                             </div>
-                        </div>
+                            </div>
 
-                        <div className="space-y-1">
-                             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-1">
-                                <Filter className="w-3 h-3" /> Status
-                             </label>
-                             <div className="relative">
+                            <div className="relative group">
                                 <select 
-                                    className="w-full appearance-none bg-gray-50 border border-gray-200 text-gray-700 py-2.5 px-4 pr-8 rounded-lg leading-tight focus:outline-none focus:bg-white focus:border-indigo-500"
+                                    className="appearance-none bg-gray-50 hover:bg-white border-transparent py-3.5 pl-4 pr-10 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white shadow-sm transition-all cursor-pointer font-medium text-gray-700 w-full sm:w-auto hover:shadow-md"
                                     value={selectedStatus}
                                     onChange={(e) => setSelectedStatus(e.target.value)}
                                 >
@@ -319,19 +336,17 @@ const EventsPage: React.FC<{
                                     <option value="ongoing">Ongoing</option>
                                     <option value="completed">Completed</option>
                                 </select>
-                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                                    <ChevronDown className="w-4 h-4" />
+                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+                                    <ChevronDown className="h-4 w-4" />
                                 </div>
-                             </div>
-                        </div>
+                            </div>
 
-                        <div className="space-y-1">
-                             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-1">
-                                <Calendar className="w-3 h-3" /> Date Range
-                             </label>
-                             <div className="relative">
+                            <div className="relative group">
+                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <Calendar className="h-4 w-4 text-gray-500 group-hover:text-indigo-500 transition-colors" />
+                                </div>
                                 <select 
-                                    className="w-full appearance-none bg-gray-50 border border-gray-200 text-gray-700 py-2.5 px-4 pr-8 rounded-lg leading-tight focus:outline-none focus:bg-white focus:border-indigo-500"
+                                    className="appearance-none bg-gray-50 hover:bg-white border-transparent py-3.5 pl-10 pr-10 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white shadow-sm transition-all cursor-pointer font-medium text-gray-700 w-full sm:w-auto hover:shadow-md"
                                     value={selectedDateRange}
                                     onChange={(e) => setSelectedDateRange(e.target.value)}
                                 >
@@ -340,16 +355,16 @@ const EventsPage: React.FC<{
                                     <option>This Week</option>
                                     <option>This Month</option>
                                 </select>
-                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                                    <ChevronDown className="w-4 h-4" />
+                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+                                    <ChevronDown className="h-4 w-4" />
                                 </div>
-                             </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {filteredEvents.map(event => (
                     <EventCard 
                         key={event.id} 
@@ -360,12 +375,12 @@ const EventsPage: React.FC<{
             </div>
 
             {filteredEvents.length === 0 && (
-                <div className="text-center py-12">
-                    <div className="bg-gray-50 rounded-full h-16 w-16 flex items-center justify-center mx-auto mb-4">
-                        <Search className="h-8 w-8 text-gray-400" />
+                <div className="text-center py-16 bg-white rounded-3xl border border-dashed border-gray-200">
+                    <div className="bg-indigo-50 rounded-full h-20 w-20 flex items-center justify-center mx-auto mb-6">
+                        <Search className="h-10 w-10 text-indigo-400" />
                     </div>
-                    <h3 className="text-lg font-medium text-gray-900">No events found</h3>
-                    <p className="text-gray-500">Try adjusting your search or filters</p>
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">No events found</h3>
+                    <p className="text-gray-500 max-w-md mx-auto">We couldn't find any events matching your search. Try adjusting your filters or search terms.</p>
                 </div>
             )}
 
