@@ -59,11 +59,19 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 font-sans">
-      <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-2xl shadow-xl border border-gray-100">
+    <div className="min-h-screen bg-slate-900 relative flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 font-sans overflow-hidden">
+      {/* Background Decor */}
+      <div className="absolute inset-0 z-0">
+         <div className="absolute top-0 -left-4 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
+         <div className="absolute top-0 -right-4 w-72 h-72 bg-indigo-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
+         <div className="absolute -bottom-8 left-20 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
+         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
+      </div>
+
+      <div className="max-w-md w-full space-y-8 bg-white/95 backdrop-blur-sm p-10 rounded-2xl shadow-2xl border border-white/20 z-10 relative">
         <div className="text-center">
-          <div className="mx-auto h-16 w-16 bg-indigo-600 rounded-2xl flex items-center justify-center transform rotate-3 shadow-lg mb-6">
-            <UserIcon className="h-8 w-8 text-white -rotate-3" />
+          <div className="mx-auto h-16 w-16 bg-gradient-to-tr from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center transform rotate-3 shadow-lg mb-6 text-white">
+            <UserIcon className="h-8 w-8 -rotate-3" />
           </div>
           <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">
             {isLogin ? 'Welcome Back' : 'Create Account'}
@@ -83,7 +91,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
                 <input
                   type="text"
                   required
-                  className="appearance-none rounded-lg relative block w-full px-3 py-3 pl-10 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  className="appearance-none rounded-lg relative block w-full px-3 py-3 pl-10 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-gray-50/50 focus:bg-white transition-colors"
                   placeholder="Full Name"
                   value={formData.name}
                   onChange={e => setFormData({...formData, name: e.target.value})}
@@ -97,7 +105,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
                 <input
                   type="email"
                   required
-                  className="appearance-none rounded-lg relative block w-full px-3 py-3 pl-10 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  className="appearance-none rounded-lg relative block w-full px-3 py-3 pl-10 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-gray-50/50 focus:bg-white transition-colors"
                   placeholder="Email Address"
                   value={formData.email}
                   onChange={e => setFormData({...formData, email: e.target.value})}
@@ -110,7 +118,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
                 </div>
                 <input
                   type="text"
-                  className="appearance-none rounded-lg relative block w-full px-3 py-3 pl-10 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  className="appearance-none rounded-lg relative block w-full px-3 py-3 pl-10 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-gray-50/50 focus:bg-white transition-colors"
                   placeholder="College/University Name"
                   value={formData.college}
                   onChange={e => setFormData({...formData, college: e.target.value})}
@@ -122,7 +130,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
                   <Briefcase className="h-5 w-5 text-gray-400" />
                 </div>
                 <select
-                  className="appearance-none rounded-lg relative block w-full px-3 py-3 pl-10 border border-gray-300 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white"
+                  className="appearance-none rounded-lg relative block w-full px-3 py-3 pl-10 border border-gray-300 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-gray-50/50 focus:bg-white transition-colors"
                   value={formData.role}
                   onChange={e => setFormData({...formData, role: e.target.value as UserRole})}
                 >
@@ -141,7 +149,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
                 <input
                  type="email"
                  required
-                 className="appearance-none rounded-lg relative block w-full px-3 py-3 pl-10 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                 className="appearance-none rounded-lg relative block w-full px-3 py-3 pl-10 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-gray-50/50 focus:bg-white transition-colors"
                  placeholder="Email Address"
                  value={formData.email}
                  onChange={e => setFormData({...formData, email: e.target.value})}
@@ -156,7 +164,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
             <input
               type={showPassword ? "text" : "password"}
               required
-              className="appearance-none rounded-lg relative block w-full px-3 py-3 pl-10 pr-10 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              className="appearance-none rounded-lg relative block w-full px-3 py-3 pl-10 pr-10 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-gray-50/50 focus:bg-white transition-colors"
               placeholder="Password"
               value={formData.password}
               onChange={e => setFormData({...formData, password: e.target.value})}
@@ -178,7 +186,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
                 <input
                 type={showConfirmPassword ? "text" : "password"}
                 required
-                className="appearance-none rounded-lg relative block w-full px-3 py-3 pl-10 pr-10 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="appearance-none rounded-lg relative block w-full px-3 py-3 pl-10 pr-10 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-gray-50/50 focus:bg-white transition-colors"
                 placeholder="Confirm Password"
                 value={formData.confirmPassword}
                 onChange={e => setFormData({...formData, confirmPassword: e.target.value})}
@@ -195,7 +203,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
 
           <button
             type="submit"
-            className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 shadow-md transition-all hover:shadow-lg"
+            className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 shadow-lg shadow-indigo-500/30 transition-all hover:shadow-indigo-500/50 hover:-translate-y-0.5"
           >
             {isLogin ? 'Sign In' : 'Create Account'}
             <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
@@ -216,12 +224,12 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
 
         {/* Demo Credentials Helper */}
         {isLogin && (
-            <div className="mt-8 pt-6 border-t border-gray-100">
-                <p className="text-xs text-gray-500 text-center mb-2">Demo credentials:</p>
-                <div className="space-y-1 text-xs text-gray-400 text-center">
-                    <p>Student: <span className="font-mono text-gray-600">john@university.edu</span> / password123</p>
-                    <p>College Admin: <span className="font-mono text-gray-600">sarah@university.edu</span> / password123</p>
-                    <p>Super Admin: <span className="font-mono text-gray-600">admin@university.edu</span> / password123</p>
+            <div className="mt-8 pt-6 border-t border-gray-100/60">
+                <p className="text-xs text-gray-500 text-center mb-2 font-medium">Quick Demo Access:</p>
+                <div className="space-y-1 text-xs text-gray-500 text-center bg-gray-50 p-2 rounded border border-gray-100">
+                    <p>Student: <span className="font-mono text-indigo-600">john@university.edu</span> / password123</p>
+                    <p>Organizer: <span className="font-mono text-indigo-600">sarah@university.edu</span> / password123</p>
+                    <p>Admin: <span className="font-mono text-indigo-600">admin@university.edu</span> / password123</p>
                 </div>
             </div>
         )}
