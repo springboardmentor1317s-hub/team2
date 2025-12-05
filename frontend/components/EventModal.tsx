@@ -15,6 +15,11 @@ const EventModal: React.FC<EventModalProps> = ({ event, isOpen, onClose, onRegis
 
   if (!isOpen || !event) return null;
 
+  const handleShare = () => {
+    const text = `Check out this event: ${event.title} at ${event.location}!`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+  };
+
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
       <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
@@ -144,7 +149,11 @@ const EventModal: React.FC<EventModalProps> = ({ event, isOpen, onClose, onRegis
 
           <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-t border-gray-100">
              <div className="flex space-x-2">
-                <button className="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors">
+                <button 
+                  onClick={handleShare}
+                  className="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors"
+                  title="Share via WhatsApp"
+                >
                     <Share2 className="w-5 h-5" />
                 </button>
                 <button className="p-2 text-gray-500 hover:text-pink-600 hover:bg-pink-50 rounded-full transition-colors">
