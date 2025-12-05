@@ -8,6 +8,8 @@ import EventModal from './components/EventModal';
 import Dashboard from './components/Dashboard';
 import EventForm from './components/EventForm';
 import AuthPage from './components/AuthPage';
+import ChatBot from './components/ChatBot';
+import WhatsAppBtn from './components/WhatsAppBtn';
 
 // --- Internal Auth Page Component (Wrapper to pass props) ---
 interface AuthWrapperProps {
@@ -227,6 +229,10 @@ const Layout: React.FC<{
             <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
                 {children}
             </main>
+            
+            {/* Global Widgets */}
+            <ChatBot />
+            <WhatsAppBtn />
         </div>
     );
 };
