@@ -1,5 +1,6 @@
 const User = require('../models/user')
 const {hashPassword, comparePassword} = require("../helpers/auth")
+const jwt = require('jsonwebtoken')
 
 const test = (req, res) => {
     res.json("test is working")
@@ -54,8 +55,42 @@ const registerUser = async (req, res) => {
     }
 }
 
+//Login endpoint
+const loginUser = async (req, res) => {
+    try{
+        const {email, password} = req.body;
+        //check if user exists
+        const user = await User.findOne({email});
+        if(!user){
+            return res.json({
+                error: "No user found"
+            })
+        }
+
+        //match password
+        const match = await comparePassword(password, user.password)
+        if(match){
+            //assign jwt
+            jwt.sign({
+                email: user.email, 
+                id: user._id, 
+                name: user.name,
+                role: user.role
+            }, process.env.JWT_SECRET, {}, (err, token) => {
+                if(err) throw err;
+                res.cookie('token', token).json(user)
+            })
+        }else{
+            res.json("Incorrect Password");
+        }
+    } catch(err){
+
+    }
+}
+
 module.exports = {
     test,
-    registerUser
+    registerUser,
+    loginUser
 }
 
