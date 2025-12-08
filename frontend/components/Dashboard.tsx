@@ -13,6 +13,9 @@ interface DashboardProps {
   events: Event[];
   registrations: Registration[];
   onCreateEventClick: () => void;
+  onUpdateRegistrationStatus?: (id: string, status: 'approved' | 'rejected') => void;
+  onDeleteEvent?: (eventId: string) => void;
+  onDeleteUser?: (userId: string) => void;
 }
 
 const StatCard: React.FC<StatCardProps> = ({ title, value, change, isPositive, icon, color }) => (
@@ -32,7 +35,15 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, change, isPositive, i
   </div>
 );
 
-const Dashboard: React.FC<DashboardProps> = ({ user, events, registrations, onCreateEventClick }) => {
+const Dashboard: React.FC<DashboardProps> = ({ 
+  user, 
+  events, 
+  registrations, 
+  onCreateEventClick,
+  onUpdateRegistrationStatus,
+  onDeleteEvent,
+  onDeleteUser
+}) => {
   const [activeTab, setActiveTab] = useState('overview');
 
   // Determine dashboard type
@@ -46,14 +57,34 @@ const Dashboard: React.FC<DashboardProps> = ({ user, events, registrations, onCr
 
   const currentTabs = isAdmin ? adminTabs : isOrganizer ? organizerTabs : studentTabs;
 
-  // Mock data for charts
+  // Mock data for charts - showing trend from Nov 2023 to Dec 2025
   const data = [
-    { name: 'Jan', events: 4, participants: 240 },
-    { name: 'Feb', events: 3, participants: 139 },
-    { name: 'Mar', events: 9, participants: 980 },
-    { name: 'Apr', events: 6, participants: 390 },
-    { name: 'May', events: 8, participants: 480 },
-    { name: 'Jun', events: 5, participants: 380 },
+    { name: 'Nov 2023', events: 2, participants: 150 },
+    { name: 'Dec 2023', events: 5, participants: 320 },
+    { name: 'Jan 2024', events: 8, participants: 580 },
+    { name: 'Feb 2024', events: 12, participants: 940 },
+    { name: 'Mar 2024', events: 15, participants: 1250 },
+    { name: 'Apr 2024', events: 9, participants: 780 },
+    { name: 'May 2024', events: 11, participants: 890 },
+    { name: 'Jun 2024', events: 14, participants: 1100 },
+    { name: 'Jul 2024', events: 10, participants: 850 },
+    { name: 'Aug 2024', events: 16, participants: 1300 },
+    { name: 'Sep 2024', events: 18, participants: 1450 },
+    { name: 'Oct 2024', events: 13, participants: 1050 },
+    { name: 'Nov 2024', events: 15, participants: 1200 },
+    { name: 'Dec 2024', events: 20, participants: 1600 },
+    { name: 'Jan 2025', events: 12, participants: 980 },
+    { name: 'Feb 2025', events: 14, participants: 1150 },
+    { name: 'Mar 2025', events: 17, participants: 1350 },
+    { name: 'Apr 2025', events: 15, participants: 1250 },
+    { name: 'May 2025', events: 19, participants: 1500 },
+    { name: 'Jun 2025', events: 16, participants: 1300 },
+    { name: 'Jul 2025', events: 14, participants: 1100 },
+    { name: 'Aug 2025', events: 18, participants: 1400 },
+    { name: 'Sep 2025', events: 22, participants: 1700 },
+    { name: 'Oct 2025', events: 20, participants: 1600 },
+    { name: 'Nov 2025', events: 24, participants: 1850 },
+    { name: 'Dec 2025', events: 28, participants: 2100 },
   ];
 
   const getEventName = (id: string) => events.find(e => e.id === id)?.title || 'Unknown Event';
@@ -115,7 +146,18 @@ const Dashboard: React.FC<DashboardProps> = ({ user, events, registrations, onCr
                 </td>
                 {isAdmin && (
                   <td className="px-6 py-4 text-right">
-                    <button className="text-indigo-600 hover:text-indigo-800 text-xs font-medium hover:underline">View Actions</button>
+                    <div className="flex justify-end gap-2">
+                        <button className="text-indigo-600 hover:text-indigo-800 text-xs font-medium hover:underline p-1">View</button>
+                        {onDeleteEvent && (
+                          <button 
+                            onClick={() => onDeleteEvent(event.id)}
+                            className="text-red-600 hover:bg-red-50 p-1 rounded" 
+                            title="Delete Event"
+                          >
+                            <XIcon className="w-4 h-4" />
+                          </button>
+                        )}
+                    </div>
                   </td>
                 )}
               </tr>
@@ -141,6 +183,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, events, registrations, onCr
                         <th className="px-6 py-3 font-medium">College</th>
                         <th className="px-6 py-3 font-medium">Last Active</th>
                         <th className="px-6 py-3 font-medium">Status</th>
+                        {isAdmin && <th className="px-6 py-3 font-medium text-right">Actions</th>}
                     </tr>
                 </thead>
                 <tbody>
@@ -171,6 +214,19 @@ const Dashboard: React.FC<DashboardProps> = ({ user, events, registrations, onCr
                                     {u.status || 'Active'}
                                 </span>
                             </td>
+                            {isAdmin && (
+                              <td className="px-6 py-4 text-right">
+                                {onDeleteUser && (
+                                  <button 
+                                    onClick={() => onDeleteUser(u.id)}
+                                    className="text-gray-400 hover:text-red-600 p-1 transition-colors"
+                                    title="Ban/Delete User"
+                                  >
+                                    <XIcon className="w-4 h-4" />
+                                  </button>
+                                )}
+                              </td>
+                            )}
                         </tr>
                     ))}
                 </tbody>
@@ -228,17 +284,24 @@ const Dashboard: React.FC<DashboardProps> = ({ user, events, registrations, onCr
                                       </span>
                                   </td>
                                   <td className="px-6 py-4 text-right">
-                                      {reg.status === 'pending' && (
+                                      {reg.status === 'pending' && onUpdateRegistrationStatus ? (
                                           <div className="flex justify-end gap-2">
-                                              <button className="p-1 text-green-600 hover:bg-green-50 rounded" title="Approve">
+                                              <button 
+                                                onClick={() => onUpdateRegistrationStatus(reg.id, 'approved')}
+                                                className="p-1 text-green-600 hover:bg-green-50 rounded" 
+                                                title="Approve"
+                                              >
                                                   <Check className="w-4 h-4" />
                                               </button>
-                                              <button className="p-1 text-red-600 hover:bg-red-50 rounded" title="Reject">
+                                              <button 
+                                                onClick={() => onUpdateRegistrationStatus(reg.id, 'rejected')}
+                                                className="p-1 text-red-600 hover:bg-red-50 rounded" 
+                                                title="Reject"
+                                              >
                                                   <XIcon className="w-4 h-4" />
                                               </button>
                                           </div>
-                                      )}
-                                      {reg.status !== 'pending' && (
+                                      ) : (
                                           <button className="text-gray-400 hover:text-gray-600 p-1">
                                               <MoreHorizontal className="w-4 h-4" />
                                           </button>
@@ -383,7 +446,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, events, registrations, onCr
         />
         <StatCard 
           title={isAdmin ? "Pending Reviews" : "Average Participants"} 
-          value="0" 
+          value={isAdmin ? registrations.filter(r => r.status === 'pending').length.toString() : "0"} 
           change={isAdmin ? "-2%" : "0"} 
           isPositive={false} 
           icon={isAdmin ? <AlertCircle className="w-5 h-5" /> : <Users className="w-5 h-5" />} 
