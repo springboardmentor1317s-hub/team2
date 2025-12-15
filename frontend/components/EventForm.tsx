@@ -156,19 +156,24 @@ const EventForm: React.FC<EventFormProps> = ({ onClose, onSubmit }) => {
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <Layers className="h-5 w-5 text-gray-400" />
                             </div>
-                            <select
+                            <input
+                                type="text"
+                                list="category-options"
                                 id="category"
                                 name="category"
                                 className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-lg p-2.5 border bg-white"
                                 value={formData.category}
                                 onChange={handleChange}
-                            >
+                                placeholder="Select or type category"
+                                autoComplete="off"
+                            />
+                            <datalist id="category-options">
                                 <option value="cultural">Cultural</option>
                                 <option value="sports">Sports</option>
                                 <option value="hackathon">Hackathon</option>
                                 <option value="workshop">Workshop</option>
                                 <option value="other">Other</option>
-                            </select>
+                            </datalist>
                          </div>
                     </div>
 
