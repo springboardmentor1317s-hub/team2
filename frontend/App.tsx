@@ -5,7 +5,7 @@ import { User, Event, UserRole, Registration } from './types';
 import { MOCK_USERS, MOCK_EVENTS, MOCK_REGISTRATIONS } from './constants';
 import EventCard from './components/EventCard';
 import EventModal from './components/EventModal';
-import Dashboard from './components/Dashboard';
+import { Dashboard } from './components/Dashboard';
 import EventForm from './components/EventForm';
 import AuthPage from './components/AuthPage';
 import ChatBot from './components/ChatBot';
