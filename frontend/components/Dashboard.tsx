@@ -52,7 +52,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   
   // Tabs Configuration
   const adminTabs = ['Overview', 'User Management', 'Event Management', 'Registrations', 'Admin Logs'];
-  const organizerTabs = ['Overview', 'My Events', 'Analytics'];
+  const organizerTabs = ['Overview', 'My Events', 'Registrations', 'Analytics'];
   const studentTabs = ['Overview', 'My Events'];
 
   const currentTabs = isAdmin ? adminTabs : isOrganizer ? organizerTabs : studentTabs;
@@ -91,6 +91,34 @@ const Dashboard: React.FC<DashboardProps> = ({
   const getUserName = (id: string) => MOCK_USERS.find(u => u.id === id)?.name || 'Unknown User';
   const getAdminName = (id: string) => MOCK_USERS.find(u => u.id === id)?.name || 'System';
 
+  const handleExportData = () => {
+    // Create CSV content
+    const headers = ['Event Name', 'Category', 'Location', 'Start Date', 'Status', 'Participants Count', 'Max Participants'];
+    const csvRows = events.map(event => [
+        `"${event.title}"`,
+        event.category,
+        `"${event.location}"`,
+        new Date(event.startDate).toLocaleDateString(),
+        event.status,
+        event.participantsCount,
+        event.maxParticipants
+    ].join(','));
+
+    const csvString = [headers.join(','), ...csvRows].join('\n');
+    
+    // Create blob and download link
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', `events_export_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const RecentEventsTable = ({ limit }: { limit?: number }) => (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
       <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
@@ -101,7 +129,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             </button>
         }
         {!isAdmin && activeTab !== 'event management' &&
-             <button className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">View All</button>
+             <button className="text-sm text-indigo-600 hover:text-indigo-700 font-medium" onClick={() => setActiveTab('my events')}>View All</button>
         }
       </div>
       <div className="overflow-x-auto">
@@ -243,7 +271,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                   <button className="p-1.5 text-gray-500 hover:bg-gray-100 rounded-lg">
                       <Filter className="w-4 h-4" />
                   </button>
-                  <button className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">Export CSV</button>
+                  <button onClick={handleExportData} className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">Export CSV</button>
               </div>
           </div>
           <div className="overflow-x-auto">
@@ -512,10 +540,16 @@ const Dashboard: React.FC<DashboardProps> = ({
                                         <Plus className="w-4 h-4" /> Create New Event
                                     </button>
                                 )}
-                                <button className="w-full bg-gray-50 text-gray-700 py-2 px-4 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors border border-gray-200">
+                                <button 
+                                    onClick={() => setActiveTab('registrations')} 
+                                    className="w-full bg-gray-50 text-gray-700 py-2 px-4 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors border border-gray-200"
+                                >
                                     View All Registrations
                                 </button>
-                                <button className="w-full bg-gray-50 text-gray-700 py-2 px-4 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors border border-gray-200">
+                                <button 
+                                    onClick={handleExportData}
+                                    className="w-full bg-gray-50 text-gray-700 py-2 px-4 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors border border-gray-200"
+                                >
                                     Export Event Data
                                 </button>
                             </div>
