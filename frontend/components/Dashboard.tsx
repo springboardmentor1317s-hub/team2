@@ -35,7 +35,7 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, change, isPositive, i
   </div>
 );
 
-const Dashboard: React.FC<DashboardProps> = ({ 
+export const Dashboard: React.FC<DashboardProps> = ({ 
   user, 
   events, 
   registrations, 
@@ -591,5 +591,3 @@ const Dashboard: React.FC<DashboardProps> = ({
     </div>
   );
 };
-
-export default Dashboard;
