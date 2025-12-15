@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { X, Upload, Calendar as CalendarIcon, MapPin, Type, Layers } from 'lucide-react';
 import { Event } from '../types';
 
@@ -18,6 +18,9 @@ const EventForm: React.FC<EventFormProps> = ({ onClose, onSubmit }) => {
     maxParticipants: '',
   });
 
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // In a real app, validation and processing would happen here
@@ -28,13 +31,35 @@ const EventForm: React.FC<EventFormProps> = ({ onClose, onSubmit }) => {
         status: 'upcoming',
         tags: ['new', 'event'],
         participantsCount: 0,
-        imageUrl: `https://picsum.photos/seed/${Math.random()}/800/400`
+        // Use the preview URL if a file was uploaded, otherwise use a random seed
+        imageUrl: previewUrl || `https://picsum.photos/seed/${Math.random()}/800/400`
     });
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Create a fake local URL for preview purposes
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+    }
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
+
+  const removeImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setPreviewUrl(null);
+    if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+    }
   };
 
   return (
@@ -58,17 +83,50 @@ const EventForm: React.FC<EventFormProps> = ({ onClose, onSubmit }) => {
             <form onSubmit={handleSubmit} className="px-4 py-5 sm:p-6 space-y-6">
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Event Banner</label>
-                    <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-indigo-400 transition-colors cursor-pointer bg-gray-50">
-                        <div className="space-y-1 text-center">
-                            <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                            <div className="flex text-sm text-gray-600">
-                                <span className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
-                                    Upload a file
-                                </span>
-                                <p className="pl-1">or drag and drop</p>
+                    {/* Hidden actual file input */}
+                    <input 
+                        type="file" 
+                        ref={fileInputRef}
+                        onChange={handleFileChange}
+                        className="hidden" 
+                        accept="image/png, image/jpeg, image/gif"
+                    />
+                    
+                    {/* Visual click handler */}
+                    <div 
+                        onClick={triggerFileInput}
+                        className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-lg transition-colors cursor-pointer relative overflow-hidden group
+                            ${previewUrl ? 'border-indigo-500 bg-indigo-50 p-0' : 'border-gray-300 hover:border-indigo-400 bg-gray-50'}`}
+                    >
+                        {previewUrl ? (
+                            <div className="relative w-full h-48">
+                                <img src={previewUrl} alt="Preview" className="w-full h-full object-cover rounded-md" />
+                                <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <p className="text-white font-medium flex items-center gap-2">
+                                        <Upload className="w-5 h-5" /> Change Image
+                                    </p>
+                                </div>
+                                <button 
+                                    onClick={removeImage}
+                                    className="absolute top-2 right-2 bg-white rounded-full p-1 text-red-500 hover:bg-red-50 shadow-sm z-10"
+                                    type="button"
+                                    title="Remove image"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
                             </div>
-                            <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
-                        </div>
+                        ) : (
+                            <div className="space-y-1 text-center">
+                                <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                                <div className="flex text-sm text-gray-600 justify-center">
+                                    <span className="relative rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
+                                        Upload a file
+                                    </span>
+                                    <p className="pl-1">or drag and drop</p>
+                                </div>
+                                <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                            </div>
+                        )}
                     </div>
                 </div>
 
