@@ -10,7 +10,7 @@ interface EventFormProps {
 const EventForm: React.FC<EventFormProps> = ({ onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
     title: '',
-    category: 'cultural',
+    category: '', // Empty initially to show placeholder and suggestions
     location: '',
     startDate: '',
     endDate: '',
@@ -26,7 +26,7 @@ const EventForm: React.FC<EventFormProps> = ({ onClose, onSubmit }) => {
     // In a real app, validation and processing would happen here
     onSubmit({
         ...formData,
-        category: formData.category as any,
+        category: (formData.category || 'other') as any, // Default to other if empty
         maxParticipants: parseInt(formData.maxParticipants) || 100,
         status: 'upcoming',
         tags: ['new', 'event'],
@@ -185,6 +185,7 @@ const EventForm: React.FC<EventFormProps> = ({ onClose, onSubmit }) => {
                             </div>
                             <input
                                 type="text"
+                                list="location-options"
                                 name="location"
                                 id="location"
                                 className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-lg p-2.5 border"
@@ -192,7 +193,17 @@ const EventForm: React.FC<EventFormProps> = ({ onClose, onSubmit }) => {
                                 value={formData.location}
                                 onChange={handleChange}
                                 required
+                                autoComplete="off"
                             />
+                            <datalist id="location-options">
+                                <option value="Main Auditorium" />
+                                <option value="Sports Complex" />
+                                <option value="Computer Science Block" />
+                                <option value="Student Center" />
+                                <option value="Library Seminar Hall" />
+                                <option value="Innovation Hub" />
+                                <option value="Central Ground" />
+                            </datalist>
                         </div>
                     </div>
 
