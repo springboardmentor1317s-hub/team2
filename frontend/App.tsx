@@ -63,6 +63,22 @@ const App: React.FC = () => {
       setEvents(events.map(e => e.id === eventId ? {...e, participantsCount: e.participantsCount + 1} : e));
   };
 
+  const handleUpdateRegistrationStatus = (id: string, status: 'approved' | 'rejected') => {
+    setRegistrations(prev => prev.map(r => r.id === id ? { ...r, status } : r));
+  };
+
+  const handleDeleteRegistration = (id: string) => {
+      if (window.confirm('Are you sure you want to delete this registration?')) {
+          setRegistrations(prev => prev.filter(r => r.id !== id));
+      }
+  };
+
+  const handleDeleteEvent = (eventId: string) => {
+      if (window.confirm('Are you sure you want to delete this event?')) {
+          setEvents(prev => prev.filter(e => e.id !== eventId));
+      }
+  };
+
   return (
     <Router>
       {!currentUser ? (
@@ -95,6 +111,9 @@ const App: React.FC = () => {
                         events={events} 
                         registrations={registrations}
                         onCreateEvent={handleCreateEvent}
+                        onUpdateRegistrationStatus={handleUpdateRegistrationStatus}
+                        onDeleteRegistration={handleDeleteRegistration}
+                        onDeleteEvent={handleDeleteEvent}
                     />
                 } 
             />
@@ -405,8 +424,11 @@ const DashboardPage: React.FC<{
     user: User, 
     events: Event[], 
     registrations: Registration[],
-    onCreateEvent: (e: Partial<Event>) => void 
-}> = ({ user, events, registrations, onCreateEvent }) => {
+    onCreateEvent: (e: Partial<Event>) => void,
+    onUpdateRegistrationStatus: (id: string, status: 'approved' | 'rejected') => void,
+    onDeleteRegistration: (id: string) => void,
+    onDeleteEvent: (id: string) => void
+}> = ({ user, events, registrations, onCreateEvent, onUpdateRegistrationStatus, onDeleteRegistration, onDeleteEvent }) => {
     const [isFormOpen, setIsFormOpen] = useState(false);
 
     // Filter events for the dashboard based on role
@@ -425,6 +447,9 @@ const DashboardPage: React.FC<{
                 events={user.role === UserRole.STUDENT ? myEvents : dashboardEvents} 
                 registrations={user.role === UserRole.STUDENT ? myRegistrations : registrations}
                 onCreateEventClick={() => setIsFormOpen(true)}
+                onUpdateRegistrationStatus={onUpdateRegistrationStatus}
+                onDeleteRegistration={onDeleteRegistration}
+                onDeleteEvent={onDeleteEvent}
             />
             {isFormOpen && (
                 <EventForm 
