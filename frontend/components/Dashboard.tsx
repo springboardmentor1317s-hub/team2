@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { User, UserRole, Event, Registration, StatCardProps } from '../types';
 import { 
-  Users, Calendar, TrendingUp, Activity, AlertCircle, Plus, FileText, CheckCircle, Filter, Shield, MoreHorizontal, Clock, Check, X as XIcon, Download
+  Users, Calendar, TrendingUp, Activity, AlertCircle, Plus, FileText, CheckCircle, Filter, Shield, MoreHorizontal, Clock, Check, X as XIcon, Download, Trash2
 } from 'lucide-react';
 import { 
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line 
@@ -14,6 +14,7 @@ interface DashboardProps {
   registrations: Registration[];
   onCreateEventClick: () => void;
   onUpdateRegistrationStatus?: (id: string, status: 'approved' | 'rejected') => void;
+  onDeleteRegistration?: (id: string) => void;
   onDeleteEvent?: (eventId: string) => void;
   onDeleteUser?: (userId: string) => void;
 }
@@ -41,6 +42,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   registrations, 
   onCreateEventClick,
   onUpdateRegistrationStatus,
+  onDeleteRegistration,
   onDeleteEvent,
   onDeleteUser
 }) => {
@@ -312,8 +314,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                       </span>
                                   </td>
                                   <td className="px-6 py-4 text-right">
-                                      {reg.status === 'pending' && onUpdateRegistrationStatus ? (
-                                          <div className="flex justify-end gap-2">
+                                    <div className="flex justify-end gap-2 items-center">
+                                      {reg.status === 'pending' && onUpdateRegistrationStatus && (
+                                          <>
                                               <button 
                                                 onClick={() => onUpdateRegistrationStatus(reg.id, 'approved')}
                                                 className="p-1 text-green-600 hover:bg-green-50 rounded" 
@@ -328,12 +331,25 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                               >
                                                   <XIcon className="w-4 h-4" />
                                               </button>
-                                          </div>
-                                      ) : (
+                                          </>
+                                      )}
+                                      
+                                      {onDeleteRegistration && (
+                                        <button 
+                                          onClick={() => onDeleteRegistration(reg.id)}
+                                          className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                                          title="Delete Registration"
+                                        >
+                                          <Trash2 className="w-4 h-4" />
+                                        </button>
+                                      )}
+
+                                      {!onDeleteRegistration && reg.status !== 'pending' && (
                                           <button className="text-gray-400 hover:text-gray-600 p-1">
                                               <MoreHorizontal className="w-4 h-4" />
                                           </button>
                                       )}
+                                    </div>
                                   </td>
                               </tr>
                           ))
