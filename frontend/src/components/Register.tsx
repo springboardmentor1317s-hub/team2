@@ -13,7 +13,7 @@ import { useState } from "react";
 // Add props definition to Register if you want to switch to login view on success
 interface RegisterProps {
   setCurrentPage: (page: string) => void;
-  onRegistrationSuccess: () => void;
+  onRegistrationSuccess: (user: any) => void;
 }
 
 // Update the function signature to accept the props
@@ -63,7 +63,7 @@ export function Register({
     // Destructure the data we need, excluding the client-side only fields
     const { confirmPassword, agreeToTerms, ...dataToSend } = formData;
 // 💡 NEW DIAGNOSTIC LINE
-    console.log('Payload being sent:', JSON.stringify(dataToSend)); // Look for the 'role' field here
+   /* console.log('Payload being sent:', JSON.stringify(dataToSend)); */
     // 2. API Call
     try {
       const response = await fetch("http://localhost:5000/api/auth/register", {
@@ -80,6 +80,7 @@ export function Register({
        
         localStorage.setItem("token", responseData.token);
         console.log("Registration successful, redirecting..."); // New log for confirmation
+        
         
         // 🔑 Trigger the success handler to redirect to Dashboard
         onRegistrationSuccess(responseData.user);
