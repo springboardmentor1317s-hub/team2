@@ -16,19 +16,21 @@ export interface User {
 }
 
 export interface Event {
-  id: string;
-  collegeId: string;
+  _id: string;
   title: string;
-  description: string;
+  collegeName: string;
   category: 'cultural' | 'sports' | 'hackathon' | 'workshop' | 'other';
+  collegeId: string;
+  organizerId: string;
   location: string;
   startDate: string;
   endDate: string;
-  status: 'upcoming' | 'ongoing' | 'completed';
-  tags: string[];
-  imageUrl: string;
-  participantsCount: number;
+  description: string;
   maxParticipants: number;
+  participantsCount: number;
+  status: 'upcoming' | 'ongoing' | 'completed';
+  imageUrl: string;
+  tags: string[];
   createdAt: string;
 }
 
