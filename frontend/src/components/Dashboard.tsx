@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Users,
   Calendar,
@@ -39,16 +39,15 @@ import {
   Line,
 } from "recharts";
 import { useTheme } from "../context/ThemeContext";
+import { formatDate } from '../utils/formatters';
 
 // --- 💡 MOCK STRUCTURES (From your previous working code) ---
 // Define the roles explicitly for comparison
+
 const UserRole = {
   STUDENT: "student",
   ORGANIZER: "organizer",
-  ADMIN: "admin", // Use 'admin' as defined in your backend enum
-  // Mapping complex mock roles to simple backend roles for UI logic:
-  SUPER_ADMIN: "admin",
-  COLLEGE_ADMIN: "organizer",
+  ADMIN: "admin",
 };
 
 // Mock User structure based on what you pass from App.tsx
@@ -59,27 +58,7 @@ interface AppUser {
   role: "student" | "organizer" | "admin";
 }
 
-// Mock Data Definitions (Used in helper functions and tables)
-const MOCK_EVENTS = [
-  {
-    id: "e1",
-    title: "AI Workshop",
-    location: "Room 404",
-    category: "Technology",
-    startDate: new Date(),
-    status: "upcoming",
-    participantsCount: 50,
-  },
-  {
-    id: "e2",
-    title: "Football Tournament",
-    location: "Stadium",
-    category: "Sports",
-    startDate: new Date(),
-    status: "ongoing",
-    participantsCount: 150,
-  },
-];
+
 const MOCK_REGISTRATIONS = [
   {
     id: "r1",
@@ -155,6 +134,18 @@ const MOCK_ADMIN_LOGS = [
   },
 ];
 
+  const registrations = MOCK_REGISTRATIONS; 
+  const allUsers = MOCK_ALL_USERS;
+  const adminLogs = MOCK_ADMIN_LOGS;
+// 🔑 ADD THIS BLOCK BACK for the Registration Trends Chart
+  const data = [
+    { name: "Nov 2024", events: 15, participants: 1200 },
+    { name: "Dec 2024", events: 20, participants: 1600 },
+    { name: "Jan 2025", events: 12, participants: 980 },
+    { name: "Feb 2025", events: 14, participants: 1150 },
+    { name: "Mar 2025", events: 17, participants: 1350 },
+  ];
+
 // --- DASHBOARD PROPS (Simplified to use working components/functions) ---
 interface DashboardProps {
   user: AppUser;
@@ -212,35 +203,50 @@ export function Dashboard({
 }: DashboardProps) {
   const { theme, toggleTheme } = useTheme();
   const [activeTab, setActiveTab] = useState("overview");
-
   const [isCollapsed, setIsCollapsed] = useState(true);
+  
+// 🔑 NEW: Dynamic State for Live Events
+  const [events, setEvents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+ // --- 🔑 UPDATED CONNECTION LOGIC ---
+  // We use lowercase comparison to match the backend exactly
+  const isAdmin = user.role === "admin";
+  const isOrganizer = user.role === "organizer";
+  const isStudent = user.role === "student";
 
-  // --- 🔑 CONNECTION LOGIC & ROLE MAPPING ---
-  const isAdmin = user.role === UserRole.ADMIN;
-  const isOrganizer = user.role === UserRole.ORGANIZER;
-  const isStudent = user.role === UserRole.STUDENT;
-
-  // Use Mock Data directly
-  const events = MOCK_EVENTS;
-  const registrations = MOCK_REGISTRATIONS;
-  const allUsers = MOCK_ALL_USERS;
-  const adminLogs = MOCK_ADMIN_LOGS;
-
-  // Charts Mock Data (For Recharts placeholder)
-  const data = [
-    { name: "Nov 2024", events: 15, participants: 1200 },
-    { name: "Dec 2024", events: 20, participants: 1600 },
-    { name: "Jan 2025", events: 12, participants: 980 },
-    { name: "Feb 2025", events: 14, participants: 1150 },
-    { name: "Mar 2025", events: 17, participants: 1350 },
-  ];
-  // --- Helper Functions (Updated for simplicity) ---
+  // 🔑 ADD THESE HELPER FUNCTIONS BACK:
   const getEventName = (id: string) =>
-    events.find((e) => e.id === id)?.title || "Unknown Event";
+    events.find((e) => (e._id || e.id) === id)?.title || "Unknown Event";
+
   const getUserName = (id: string) =>
     allUsers.find((u) => u.id === id)?.name || "Unknown User";
+
   const getAdminName = (id: string) =>
     allUsers.find((u) => u.id === id)?.name || "System";
+ 
+// 🔑 NEW: Fetch events from database
+
+useEffect(() => { 
+    const fetchEvents = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/events');
+        const result = await response.json();
+        
+        // 🔑 FIX: Access result.data because your backend sends { success: true, data: [...] }
+        if (result.success && Array.isArray(result.data)) {
+            setEvents(result.data);
+        }
+        
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching live events:", error);
+        setLoading(false);
+      }
+    };
+    fetchEvents();
+}, []);
+
+
 
   // --- Calculation Stubs (Needed for StatCards) ---
   const totalParticipants = events.reduce(
@@ -250,13 +256,40 @@ export function Dashboard({
   const averageParticipants =
     events.length > 0 ? (totalParticipants / events.length).toFixed(1) : "0";
 
+// 🔑 FIX: Re-defining the missing variable
   const dashboardRegistrations = isStudent
-    ? // Simple filter stub: In a real app, you'd filter registrations by user.id
-      registrations.filter(
-        (r) =>
-          r.userId === MOCK_ALL_USERS.find((u) => u.name === user.fullName)?.id
+    ? MOCK_REGISTRATIONS.filter(
+        (r) => r.userId === MOCK_ALL_USERS.find((u) => u.name === user.fullName)?.id
       )
-    : registrations;
+    : MOCK_REGISTRATIONS;
+
+    const handleExportData = () => {
+    // Create CSV content
+    const headers = ['Event Name', 'Category', 'Location', 'Start Date', 'Status', 'Participants Count', 'Max Participants'];
+    const csvRows = events.map(event => [
+        `"${event.title}"`,
+        event.category,
+        `"${event.location}"`,
+        formatDate(event.startDate),
+        event.status,
+        event.participantsCount,
+        event.maxParticipants
+    ].join(','));
+
+    const csvString = [headers.join(','), ...csvRows].join('\n');
+    
+    // Create blob and download link
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', `events_export_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   // --- Tabs Configuration ---
   const adminTabs = [
@@ -294,8 +327,7 @@ export function Dashboard({
     events: eventList,
     limit,
   }: {
-    events: typeof MOCK_EVENTS;
-    limit?: number;
+     events: any[]; limit?: number 
   }) => (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
       <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
@@ -334,7 +366,7 @@ export function Dashboard({
           <tbody>
             {eventList.slice(0, limit || eventList.length).map((event) => (
               <tr
-                key={event.id}
+                key={event._id || event.id}
                 className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors"
               >
                 <td className="px-6 py-4 font-medium text-gray-900">
@@ -358,7 +390,7 @@ export function Dashboard({
                   </span>
                 </td>
                 <td className="px-6 py-4 text-gray-500">
-                  {new Date(event.startDate).toLocaleDateString()}
+                  {formatDate(event.startDate)}
                 </td>
                 <td className="px-6 py-4">
                   <span
@@ -504,8 +536,8 @@ export function Dashboard({
           <button className="p-1.5 text-gray-500 hover:bg-gray-100 rounded-lg">
             <Filter className="w-4 h-4" />
           </button>
-          <button className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">
-            <Download className="w-4 h-4" /> Export CSV
+          <button onClick={handleExportData} className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
+            Export CSV
           </button>
         </div>
       </div>
@@ -540,7 +572,7 @@ export function Dashboard({
                     {getEventName(reg.eventId)}
                   </td>
                   <td className="px-6 py-4 text-gray-500">
-                    {new Date(reg.timestamp).toLocaleDateString()}
+                    {formatDate(reg.timestamp)}
                   </td>
                   <td className="px-6 py-4">
                     <span
@@ -619,7 +651,7 @@ export function Dashboard({
                 <td className="px-6 py-4 text-gray-500 whitespace-nowrap">
                   <div className="flex items-center">
                     <Clock className="w-3 h-3 mr-2 text-gray-400" />
-                    {new Date(log.timestamp).toLocaleString()}
+                   {formatDate(log.timestamp)}
                   </div>
                 </td>
                 <td className="px-6 py-4 font-medium text-gray-900">
@@ -676,73 +708,82 @@ export function Dashboard({
           </div>
 
           <nav className="nav-menu space-y-2">
-            {currentTabs.map((tab) => (
-              <button
-                key={tab}
-                onClick={() => {
-                  const tabLower = tab.toLowerCase(); // 🔑 CORE FIX: Check if the button should trigger external navigation
-
-                  if (tabLower.includes("discover")) {
-                    // If 'Discover Events' is clicked, redirect the main App page
-                    setCurrentPage("discover");
-                  } else {
-                    // For all other tabs, stay on the dashboard and switch content
-                    setActiveTab(tabLower);
-                  }
-                }}
-                className={`w-full flex items-center p-3 rounded-lg font-medium text-sm transition-all duration-200 
+            {currentTabs.map((tab) => {
+              const tabLower = tab.toLowerCase();
+              return (
+                <button
+                  key={tab}
+                  onClick={() => {
+                    if (tabLower.includes("discover")) {
+                      // If 'Discover Events' is clicked, redirect the main App page
+                      setCurrentPage("discover");
+                      setActiveTab(tabLower); // Also set active tab for styling
+                    } else if (children && !tabLower.includes("discover")) {
+                      // If children are shown (EventsDiscoveryPage) and user clicks a non-discover tab, navigate back to dashboard
+                      setCurrentPage("dashboard");
+                      setActiveTab(tabLower);
+                    } else {
+                      // For all other tabs, stay on the dashboard and switch content
+                      setActiveTab(tabLower);
+                    }
+                  }}
+                  className={`w-full flex items-center p-3 rounded-lg font-medium text-sm transition-all duration-200 
                                ${
-                                 activeTab === tab.toLowerCase()
+                                 (children && tabLower.includes("discover")) ||
+                                 activeTab === tabLower
                                    ? "bg-indigo-500 text-white shadow-md"
                                    : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                                }
                               `}
-              >
-                {tab === "Overview" ? (
-                  <Home
-                    className={`w-5 h-5 ${!isCollapsed ? "mr-3" : "mx-auto"}`}
-                  />
-                ) : tab === "Discover Events" ? (
-                  <Compass
-                    className={`w-5 h-5 ${!isCollapsed ? "mr-3" : "mx-auto"}`}
-                  /> // <-- NEW DISCOVER TAB
-                ) : tab === "My Events" || tab === "Event Management" ? (
-                  <Calendar
-                    className={`w-5 h-5 ${!isCollapsed ? "mr-3" : "mx-auto"}`}
-                  />
-                ) : tab === "User Management" ? (
-                  <Users
-                    className={`w-5 h-5 ${!isCollapsed ? "mr-3" : "mx-auto"}`}
-                  />
-                ) : tab === "Registrations" ? (
-                  <ClipboardList
-                    className={`w-5 h-5 ${!isCollapsed ? "mr-3" : "mx-auto"}`}
-                  />
-                ) : tab === "Analytics" ? (
-                  <TrendingUp
-                    className={`w-5 h-5 ${!isCollapsed ? "mr-3" : "mx-auto"}`}
-                  />
-                ) : tab === "Admin Logs" ? (
-                  <FileText
-                    className={`w-5 h-5 ${!isCollapsed ? "mr-3" : "mx-auto"}`}
-                  />
-                ) : tab === "Event Management" ? (
-                  <Activity
-                    className={`w-5 h-5 ${!isCollapsed ? "mr-3" : "mx-auto"}`}
-                  />
-                ) : (
-                  <Settings
-                    className={`w-5 h-5 ${!isCollapsed ? "mr-3" : "mx-auto"}`}
-                  />
-                )}
-                {/* TEXT - Hidden when collapsed */}
-                <span
-                  className={`whitespace-nowrap ${isCollapsed ? "hidden" : ""}`}
                 >
-                  {tab}
-                </span>
-              </button>
-            ))}
+                  {tab === "Overview" ? (
+                    <Home
+                      className={`w-5 h-5 ${!isCollapsed ? "mr-3" : "mx-auto"}`}
+                    />
+                  ) : tab === "Discover Events" ? (
+                    <Compass
+                      className={`w-5 h-5 ${!isCollapsed ? "mr-3" : "mx-auto"}`}
+                    /> // <-- NEW DISCOVER TAB
+                  ) : tab === "My Events" || tab === "Event Management" ? (
+                    <Calendar
+                      className={`w-5 h-5 ${!isCollapsed ? "mr-3" : "mx-auto"}`}
+                    />
+                  ) : tab === "User Management" ? (
+                    <Users
+                      className={`w-5 h-5 ${!isCollapsed ? "mr-3" : "mx-auto"}`}
+                    />
+                  ) : tab === "Registrations" ? (
+                    <ClipboardList
+                      className={`w-5 h-5 ${!isCollapsed ? "mr-3" : "mx-auto"}`}
+                    />
+                  ) : tab === "Analytics" ? (
+                    <TrendingUp
+                      className={`w-5 h-5 ${!isCollapsed ? "mr-3" : "mx-auto"}`}
+                    />
+                  ) : tab === "Admin Logs" ? (
+                    <FileText
+                      className={`w-5 h-5 ${!isCollapsed ? "mr-3" : "mx-auto"}`}
+                    />
+                  ) : tab === "Event Management" ? (
+                    <Activity
+                      className={`w-5 h-5 ${!isCollapsed ? "mr-3" : "mx-auto"}`}
+                    />
+                  ) : (
+                    <Settings
+                      className={`w-5 h-5 ${!isCollapsed ? "mr-3" : "mx-auto"}`}
+                    />
+                  )}
+                  {/* TEXT - Hidden when collapsed */}
+                  <span
+                    className={`whitespace-nowrap ${
+                      isCollapsed ? "hidden" : ""
+                    }`}
+                  >
+                    {tab}
+                  </span>
+                </button>
+              );
+            })}
           </nav>
         </div>
 
@@ -887,93 +928,115 @@ export function Dashboard({
           {/* Tabs Navigation (Matches the component logic) */}
           <div className="border-b border-gray-200">
             <nav className="-mb-px flex space-x-8 overflow-x-auto">
-              {currentTabs.map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab.toLowerCase())}
-                  className={`whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                    activeTab === tab.toLowerCase()
-                      ? "border-indigo-500 text-indigo-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                  }`}
-                >
-                  {tab}
-                </button>
-              ))}
+              {currentTabs.map((tab) => {
+                const tabLower = tab.toLowerCase();
+                return (
+                  <button
+                    key={tab}
+                    onClick={() => {
+                      // If user clicks "Discover Events" tab, navigate to discover page
+                      if (tabLower.includes("discover")) {
+                        setCurrentPage("discover");
+                        setActiveTab(tabLower);
+                      } else if (children && !tabLower.includes("discover")) {
+                        // If children are shown (EventsDiscoveryPage) and user clicks a non-discover tab, navigate back to dashboard
+                        setCurrentPage("dashboard");
+                        setActiveTab(tabLower);
+                      } else {
+                        setActiveTab(tabLower);
+                      }
+                    }}
+                    className={`whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                      (children && tabLower.includes("discover")) ||
+                      (!children && activeTab === tabLower)
+                        ? "border-indigo-500 text-indigo-600"
+                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                );
+              })}
             </nav>
           </div>
 
           {/* Stats Grid - Always visible on Overview, maybe modified for others */}
           {!children && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard
-              title={
-                isStudent
-                  ? "Events Registered"
-                  : isOrganizer
-                  ? "My College Events"
-                  : "Total Events"
-              }
-              value={events.length}
-              change="12%"
-              isPositive={true}
-              icon={<Calendar className="w-5 h-5" />}
-              color="bg-blue-500"
-            />
-            <StatCard
-              title={isAdmin ? "Total Active Users" : "Upcoming Events"}
-              value={
-                isAdmin
-                  ? allUsers.length
-                  : events.filter((e) => e.status === "upcoming").length
-              }
-              change="8%"
-              isPositive={true}
-              icon={
-                isAdmin ? (
-                  <Users className="w-5 h-5" />
-                ) : (
-                  <Activity className="w-5 h-5" />
-                )
-              }
-              color="bg-green-500"
-            />
-            <StatCard
-              title={isStudent ? "Total Registrations" : "Total Participants"}
-              value={
-                isStudent ? dashboardRegistrations.length : totalParticipants
-              }
-              change="23%"
-              isPositive={true}
-              icon={<TrendingUp className="w-5 h-5" />}
-              color="bg-purple-500"
-            />
-            <StatCard
-              title={isAdmin ? "Pending Reviews" : "Avg. Participants / Event"}
-              value={
-                isAdmin
-                  ? registrations.filter((r) => r.status === "pending").length
-                  : averageParticipants
-              }
-              change={isAdmin ? "-2%" : "0"}
-              isPositive={false}
-              icon={
-                isAdmin ? (
-                  <AlertCircle className="w-5 h-5" />
-                ) : (
-                  <Users className="w-5 h-5" />
-                )
-              }
-              color="bg-orange-500"
-            />
-          </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <StatCard
+                title={
+                  isStudent
+                    ? "Events Registered"
+                    : isOrganizer
+                    ? "My College Events"
+                    : "Total Events"
+                }
+                value={events.length}
+                change="12%"
+                isPositive={true}
+                icon={<Calendar className="w-5 h-5" />}
+                color="bg-blue-500"
+              />
+              <StatCard
+                title={isAdmin ? "Total Active Users" : "Upcoming Events"}
+                value={
+                  isAdmin
+                    ? allUsers.length
+                    : events.filter((e) => e.status === "upcoming").length
+                }
+                change="8%"
+                isPositive={true}
+                icon={
+                  isAdmin ? (
+                    <Users className="w-5 h-5" />
+                  ) : (
+                    <Activity className="w-5 h-5" />
+                  )
+                }
+                color="bg-green-500"
+              />
+              <StatCard
+                title={isStudent ? "Total Registrations" : "Total Participants"}
+                value={
+                  isStudent ? dashboardRegistrations.length : totalParticipants
+                }
+                change="23%"
+                isPositive={true}
+                icon={<TrendingUp className="w-5 h-5" />}
+                color="bg-purple-500"
+              />
+              <StatCard
+                title={
+                  isAdmin ? "Pending Reviews" : "Avg. Participants / Event"
+                }
+                value={
+                  isAdmin
+                    ? registrations.filter((r) => r.status === "pending").length
+                    : averageParticipants
+                }
+                change={isAdmin ? "-2%" : "0"}
+                isPositive={false}
+                icon={
+                  isAdmin ? (
+                    <AlertCircle className="w-5 h-5" />
+                  ) : (
+                    <Users className="w-5 h-5" />
+                  )
+                }
+                color="bg-orange-500"
+              />
+            </div>
           )}
 
           {/* Main Content Sections */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-1">
             <div
               className={`${
-                isFullWidth ? "lg:col-span-3" : "lg:col-span-2"
+                children
+                  ? "lg:col-span-3"
+                  : isFullWidth
+                  ? "lg:col-span-3"
+                  : "lg:col-span-2"
               } space-y-6`}
             >
               {/* Show children (EventsDiscoveryPage) if provided */}
@@ -981,94 +1044,95 @@ export function Dashboard({
                 children
               ) : (
                 <>
-              {/* Logic for switching tab content */}
-              {activeTab === "overview" && (
-                <>
-                  {(isAdmin || isOrganizer) && (
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                      <h3 className="font-semibold text-gray-900 mb-4">
-                        Registration Trends
-                      </h3>
-                      <div className="h-64 w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                          {/* Using CHART_DATA from mock definition */}
-                          <LineChart data={data}>
-                            <CartesianGrid
-                              strokeDasharray="3 3"
-                              vertical={false}
-                              stroke="#f3f4f6"
-                            />
-                            <XAxis
-                              dataKey="name"
-                              axisLine={false}
-                              tickLine={false}
-                              tick={{ fill: "#9ca3af", fontSize: 12 }}
-                            />
-                            <YAxis
-                              axisLine={false}
-                              tickLine={false}
-                              tick={{ fill: "#9ca3af", fontSize: 12 }}
-                            />
-                            <Tooltip
-                              contentStyle={{
-                                backgroundColor: "#fff",
-                                borderRadius: "8px",
-                                border: "1px solid #e5e7eb",
-                                boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
-                              }}
-                              itemStyle={{ color: "#4f46e5" }}
-                            />
-                            <Line
-                              type="monotone"
-                              dataKey="participants"
-                              stroke="#4f46e5"
-                              strokeWidth={3}
-                              dot={{
-                                r: 4,
-                                fill: "#4f46e5",
-                                strokeWidth: 2,
-                                stroke: "#fff",
-                              }}
-                            />
-                          </LineChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </div>
+                  {/* Logic for switching tab content */}
+                  {activeTab === "overview" && (
+                    <>
+                      {(isAdmin || isOrganizer) && (
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                          <h3 className="font-semibold text-gray-900 mb-4">
+                            Registration Trends
+                          </h3>
+                          <div className="h-64 w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                              {/* Using CHART_DATA from mock definition */}
+                              <LineChart data={data}>
+                                <CartesianGrid
+                                  strokeDasharray="3 3"
+                                  vertical={false}
+                                  stroke="#f3f4f6"
+                                />
+                                <XAxis
+                                  dataKey="name"
+                                  axisLine={false}
+                                  tickLine={false}
+                                  tick={{ fill: "#9ca3af", fontSize: 12 }}
+                                />
+                                <YAxis
+                                  axisLine={false}
+                                  tickLine={false}
+                                  tick={{ fill: "#9ca3af", fontSize: 12 }}
+                                />
+                                <Tooltip
+                                  contentStyle={{
+                                    backgroundColor: "#fff",
+                                    borderRadius: "8px",
+                                    border: "1px solid #e5e7eb",
+                                    boxShadow:
+                                      "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                                  }}
+                                  itemStyle={{ color: "#4f46e5" }}
+                                />
+                                <Line
+                                  type="monotone"
+                                  dataKey="participants"
+                                  stroke="#4f46e5"
+                                  strokeWidth={3}
+                                  dot={{
+                                    r: 4,
+                                    fill: "#4f46e5",
+                                    strokeWidth: 2,
+                                    stroke: "#fff",
+                                  }}
+                                />
+                              </LineChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </div>
+                      )}
+                      <RecentEventsTable events={events} limit={5} />
+                    </>
                   )}
-                  <RecentEventsTable events={events} limit={5} />
-                </>
-              )}
-              {activeTab === "user management" && <UserActivityTable />}
-              {activeTab === "event management" && (
-                <RecentEventsTable events={events} />
-              )}
-              {activeTab === "registrations" && (
-                <RegistrationsTable registrations={registrations} />
-              )}
-              {activeTab === "admin logs" && <AdminLogsTable />}
-              {activeTab === "my events" && (
-                <RecentEventsTable events={events} />
-              )}
-              {activeTab !== "overview" &&
-                activeTab !== "user management" &&
-                activeTab !== "event management" &&
-                activeTab !== "registrations" &&
-                activeTab !== "admin logs" &&
-                activeTab !== "my events" && (
-                  <div className="bg-white p-12 rounded-xl shadow-sm border border-gray-100 text-center text-gray-500">
-                    <FileText className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                    <h3 className="text-lg font-medium text-gray-900">
-                      No content available
-                    </h3>
-                    <p>This section is under development.</p>
-                  </div>
-                )}
+                  {activeTab === "user management" && <UserActivityTable />}
+                  {activeTab === "event management" && (
+                    <RecentEventsTable events={events} />
+                  )}
+                  {activeTab === "registrations" && (
+                    <RegistrationsTable registrations={registrations} />
+                  )}
+                  {activeTab === "admin logs" && <AdminLogsTable />}
+                  {activeTab === "my events" && (
+                    <RecentEventsTable events={events} />
+                  )}
+                  {activeTab !== "overview" &&
+                    activeTab !== "user management" &&
+                    activeTab !== "event management" &&
+                    activeTab !== "registrations" &&
+                    activeTab !== "admin logs" &&
+                    activeTab !== "my events" && (
+                      <div className="bg-white p-12 rounded-xl shadow-sm border border-gray-100 text-center text-gray-500">
+                        <FileText className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                        <h3 className="text-lg font-medium text-gray-900">
+                          No content available
+                        </h3>
+                        <p>This section is under development.</p>
+                      </div>
+                    )}
                 </>
               )}
             </div>
 
-            {/* Sidebar Area - Only visible for Overview */}
-            {!isFullWidth && (
+            {/* Sidebar Area - Only visible for Overview and when not showing children */}
+            {!isFullWidth && !children && (
               <div className="space-y-6">
                 {activeTab === "overview" ? (
                   <>
@@ -1085,12 +1149,19 @@ export function Dashboard({
                             <Plus className="w-4 h-4" /> Create New Event
                           </button>
                         )}
-                        <button className="w-full bg-gray-50 text-gray-700 py-2 px-4 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors border border-gray-200">
-                          View All Registrations
-                        </button>
-                        <button className="w-full bg-gray-50 text-gray-700 py-2 px-4 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors border border-gray-200">
-                          Export Event Data
-                        </button>
+                                <button 
+                                    onClick={() => setActiveTab('registrations')} 
+                                    className="w-full bg-gray-50 text-gray-700 py-2 px-4 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors border border-gray-200"
+                                >
+                                    View All Registrations
+                                </button>
+
+                                <button 
+                                    onClick={handleExportData}
+                                    className="w-full bg-gray-50 text-gray-700 py-2 px-4 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors border border-gray-200"
+                                >
+                                    Export Event Data
+                                </button>
                       </div>
                     </div>
 
