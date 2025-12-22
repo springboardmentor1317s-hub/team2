@@ -1,6 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Upload, Calendar as CalendarIcon, MapPin, Type, Layers, Image as ImageIcon } from 'lucide-react';
 import { Event } from '../types';
+import sportsBanner from '../public/banners/sports.png';
+import hackathonBanner from '../public/banners/hackathon.png';
+import workshopBanner from '../public/banners/workshop.png';
+import culturalBanner from '../public/banners/cultural.png';
+import otherbanner from '../public/banners/other.png';
+
+  
 
 interface EventFormProps {
   onClose: () => void;
@@ -10,11 +17,11 @@ interface EventFormProps {
 
 // 🔑 High-quality thematic mapping for auto-generated banners
 const CATEGORY_IMAGES: Record<string, string> = {
-  cultural: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1200&q=80',
-  sports: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&w=1200&q=80',
-  hackathon: 'https://miro.medium.com/v2/resize:fit:1400/1*yp9Lznm6zoEWpnQTluBjOw.jpeg?auto=format&fit=crop&w=1200&q=80',
-  workshop: 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1200&q=80',
-  other: 'https://images.unsplash.com/photo-1541339907198-e08756ebafe3?auto=format&fit=crop&w=1200&q=80'
+  cultural: culturalBanner,
+  sports: sportsBanner,
+  hackathon: hackathonBanner,
+  workshop: workshopBanner,
+  other: otherbanner
 };
 
 const EventForm: React.FC<EventFormProps> = ({ onClose, onSubmit, currentUserCollegeId }) => {
@@ -97,13 +104,13 @@ const EventForm: React.FC<EventFormProps> = ({ onClose, onSubmit, currentUserCol
               <label className="block text-sm font-medium text-gray-700 mb-1">Event Banner</label>
               <div 
                 onClick={() => fileInputRef.current?.click()}
-                className="mt-1 flex justify-center border-2 border-gray-300 border-dashed rounded-lg hover:border-indigo-400 transition-all duration-300 cursor-pointer bg-gray-50 relative overflow-hidden group h-[250px]"
+                className="mt-1 flex justify-center border-2 border-gray-300 border-dashed rounded-lg hover:border-indigo-400 transition-all duration-300 cursor-pointer bg-gray-50 relative overflow-hidden group h-[300px]"
               >               
                 {/* 🔑 SHOWS PREVIEW URL IF UPLOADED, ELSE SHOWS CATEGORY DEFAULT */}
                 <img 
                    src={previewUrl || CATEGORY_IMAGES[formData.category as keyof typeof CATEGORY_IMAGES]} 
                    alt="Banner Preview" 
-                   className="w-full h-full absolute inset-0 object-cover transition-transform duration-500 group-hover:scale-105" 
+                   className="w-full h-full absolute inset-0 object-cover" 
                 />
                 
                 <div className="absolute inset-0 bg-black bg-opacity-40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
