@@ -2,6 +2,11 @@ import React from 'react';
 import { Event } from '../types';
 import { Calendar, MapPin, Users, Tag, Clock, GraduationCap } from 'lucide-react';
 import { formatDate } from '../utils/formatters';
+import sportsBanner from '../public/banners/sports.png';
+import hackathonBanner from '../public/banners/hackathon.png';
+import workshopBanner from '../public/banners/workshop.png';
+import culturalBanner from '../public/banners/cultural.png';
+import otherbanner from '../public/banners/other.png';
 
 interface EventCardProps {
   event: Event;
@@ -10,11 +15,11 @@ interface EventCardProps {
 
 // 🔑 Consistent thematic mapping (Same as EventForm)
 const CATEGORY_IMAGES: Record<string, string> = {
-  cultural: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1200&q=80',
-  sports: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&w=1200&q=80',
-  hackathon: 'https://miro.medium.com/v2/resize:fit:1400/1*yp9Lznm6zoEWpnQTluBjOw.jpeg?auto=format&fit=crop&w=1200&q=80',
-  workshop: 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1200&q=80',
-  other: 'https://images.unsplash.com/photo-1541339907198-e08756ebafe3?auto=format&fit=crop&w=1200&q=80'
+  cultural: culturalBanner,
+  sports: sportsBanner,
+  hackathon: hackathonBanner,
+  workshop: workshopBanner,
+  other: otherbanner
 };
 
 const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => {
