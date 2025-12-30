@@ -8,7 +8,7 @@ const createToken = (id) => {
   });
 };
 
-export const registerUser = async (req, res) => {
+ const registerUser = async (req, res) => {
   try {
     // 💡 NEW DIAGNOSTIC LINE
     // console.log('Data received by server:', req.body); // Check the data Express received
@@ -64,8 +64,7 @@ export const registerUser = async (req, res) => {
   }
 };
 
-
-export const loginUser = async (req, res) => {
+ const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -108,4 +107,9 @@ export const loginUser = async (req, res) => {
       .status(500)
       .json({ success: false, message: "Server error during login" });
   }
+};
+
+module.exports = {
+  registerUser,
+  loginUser,
 };
