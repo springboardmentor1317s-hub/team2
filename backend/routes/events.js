@@ -1,6 +1,6 @@
 const express = require('express');
 const Event = require('../models/Event');
-const auth = require('../middleware/auth');
+const { protect, isAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -9,7 +9,7 @@ const router = express.Router();
 // @access  Public
 router.get('/', async (req, res) => {
     try {
-        const events = await Event.find().sort({ createdAt: -1 });
+        const events = await Event.find().sort({ createdAt: -1 }).lean();
         res.status(200).json({
             success: true,
             count: events.length,
@@ -81,8 +81,8 @@ router.get('/filter', async (req, res) => {
 
 // @route   POST /api/events
 // @desc    Create a new event
-// @access  Private (Organizer/Admin)
-router.post('/', auth, async (req, res) => {
+// @access  Private (Admin only)
+router.post('/', protect, isAdmin, async (req, res) => {
     try {
         const { title, collegeName, category, location, startDate, endDate, description, maxParticipants, collegeId, imageUrl } = req.body;
 
@@ -94,7 +94,7 @@ router.post('/', auth, async (req, res) => {
             });
         }
 
-        // Create event with organizerId from authenticated user
+        // Create event with adminId from authenticated user
         const event = await Event.create({
             title,
             collegeName,
@@ -105,7 +105,7 @@ router.post('/', auth, async (req, res) => {
             description,
             maxParticipants: maxParticipants || 100,
             collegeId,
-            organizerId: req.user.id,
+            adminId: req.user.id,
             imageUrl: imageUrl || `https://picsum.photos/seed/${Math.random()}/800/400`,
             participantsCount: 0,
             status: 'upcoming',

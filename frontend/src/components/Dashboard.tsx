@@ -39,14 +39,14 @@ import {
   Line,
 } from "recharts";
 import { useTheme } from "../context/ThemeContext";
-import { formatDate } from '../utils/formatters';
+import { formatDate } from "../utils/formatters";
+import { getEventStatus } from "../utils/eventStatus";
 
 // --- 💡 MOCK STRUCTURES (From your previous working code) ---
 // Define the roles explicitly for comparison
 
 const UserRole = {
   STUDENT: "student",
-  ORGANIZER: "organizer",
   ADMIN: "admin",
 };
 
@@ -55,9 +55,8 @@ interface AppUser {
   id?: string; // Added ID for helper functions
   fullName: string;
   university: string;
-  role: "student" | "organizer" | "admin";
+  role: "student" | "admin";
 }
-
 
 const MOCK_REGISTRATIONS = [
   {
@@ -100,9 +99,9 @@ const MOCK_ALL_USERS = [
   },
   {
     id: "u2",
-    name: "Organiser B.",
+    name: "Admin B.",
     university: "Surya University",
-    role: UserRole.ORGANIZER,
+    role: UserRole.ADMIN,
     lastActive: "1 day ago",
     status: "Active",
   },
@@ -134,17 +133,16 @@ const MOCK_ADMIN_LOGS = [
   },
 ];
 
-  const registrations = MOCK_REGISTRATIONS; 
-  const allUsers = MOCK_ALL_USERS;
-  const adminLogs = MOCK_ADMIN_LOGS;
+const allUsers = MOCK_ALL_USERS;
+const adminLogs = MOCK_ADMIN_LOGS;
 // 🔑 ADD THIS BLOCK BACK for the Registration Trends Chart
-  const data = [
-    { name: "Nov 2024", events: 15, participants: 1200 },
-    { name: "Dec 2024", events: 20, participants: 1600 },
-    { name: "Jan 2025", events: 12, participants: 980 },
-    { name: "Feb 2025", events: 14, participants: 1150 },
-    { name: "Mar 2025", events: 17, participants: 1350 },
-  ];
+const data = [
+  { name: "Nov 2024", events: 15, participants: 1200 },
+  { name: "Dec 2024", events: 20, participants: 1600 },
+  { name: "Jan 2025", events: 12, participants: 980 },
+  { name: "Feb 2025", events: 14, participants: 1150 },
+  { name: "Mar 2025", events: 17, participants: 1350 },
+];
 
 // --- DASHBOARD PROPS (Simplified to use working components/functions) ---
 interface DashboardProps {
@@ -204,14 +202,13 @@ export function Dashboard({
   const { theme, toggleTheme } = useTheme();
   const [activeTab, setActiveTab] = useState("overview");
   const [isCollapsed, setIsCollapsed] = useState(true);
-  
-// 🔑 NEW: Dynamic State for Live Events
+  const [registrations, setRegistrations] = useState<any[]>([]);
+  // 🔑 NEW: Dynamic State for Live Events
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
- // --- 🔑 UPDATED CONNECTION LOGIC ---
+  // --- 🔑 UPDATED CONNECTION LOGIC ---
   // We use lowercase comparison to match the backend exactly
   const isAdmin = user.role === "admin";
-  const isOrganizer = user.role === "organizer";
   const isStudent = user.role === "student";
 
   // 🔑 ADD THESE HELPER FUNCTIONS BACK:
@@ -223,30 +220,75 @@ export function Dashboard({
 
   const getAdminName = (id: string) =>
     allUsers.find((u) => u.id === id)?.name || "System";
- 
-// 🔑 NEW: Fetch events from database
 
-useEffect(() => { 
-    const fetchEvents = async () => {
-      try {
-        const response = await fetch('http://localhost:5000/api/events');
-        const result = await response.json();
-        
-        // 🔑 FIX: Access result.data because your backend sends { success: true, data: [...] }
-        if (result.success && Array.isArray(result.data)) {
-            setEvents(result.data);
+  const handleUpdateRegistrationStatus = async (
+    id: string,
+    status: "approved" | "rejected"
+  ) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `http://localhost:5000/api/registrations/${id}/status`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ status }),
         }
-        
-        setLoading(false);
+      );
+
+      if (response.ok) {
+        // 🔑 Update local state immediately so the UI refreshes
+        setRegistrations((prev) =>
+          prev.map((reg) =>
+            reg._id === id ? { ...reg, status, reviewedBy: user.fullName } : reg
+          )
+        );
+        alert(`Registration ${status}!`);
+      }
+    } catch (error) {
+      console.error("Error updating status:", error);
+    }
+  };
+
+  const handleDeleteRegistration = (id: string) => {
+    setRegistrations((prev) => prev.filter((reg) => reg.id !== id));
+  };
+
+  // 🔑 NEW: Fetch events from database
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const token = localStorage.getItem("token");
+
+        // 1. Fetch Events (You already have this, but ensure it matches backend structure)
+        const eventRes = await fetch("http://localhost:5000/api/events");
+        const eventResult = await eventRes.json();
+        if (eventResult.success) setEvents(eventResult.data);
+
+        // 2. Fetch Registrations (🔑 NEW)
+        // If Admin: fetch /all, If Student: fetch /my
+        const regUrl = isAdmin
+          ? "http://localhost:5000/api/registrations/all"
+          : "http://localhost:5000/api/registrations/my";
+
+        const regRes = await fetch(regUrl, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const regData = await regRes.json();
+        setRegistrations(regData);
       } catch (error) {
-        console.error("Error fetching live events:", error);
+        console.error("Dashboard Fetch Error:", error);
+      } finally {
         setLoading(false);
       }
     };
-    fetchEvents();
-}, []);
-
-
+    fetchData();
+  }, [user.role]); // Refetch if role changes
 
   // --- Calculation Stubs (Needed for StatCards) ---
   const totalParticipants = events.reduce(
@@ -256,36 +298,50 @@ useEffect(() => {
   const averageParticipants =
     events.length > 0 ? (totalParticipants / events.length).toFixed(1) : "0";
 
-// 🔑 FIX: Re-defining the missing variable
+  // 🔑 FIX: Re-defining the missing variable
   const dashboardRegistrations = isStudent
-    ? MOCK_REGISTRATIONS.filter(
-        (r) => r.userId === MOCK_ALL_USERS.find((u) => u.name === user.fullName)?.id
+    ? registrations.filter(
+        (r) =>
+          r.userId === MOCK_ALL_USERS.find((u) => u.name === user.fullName)?.id
       )
-    : MOCK_REGISTRATIONS;
+    : registrations;
 
-    const handleExportData = () => {
-    // Create CSV content
-    const headers = ['Event Name', 'Category', 'Location', 'Start Date', 'Status', 'Participants Count', 'Max Participants'];
-    const csvRows = events.map(event => [
+  // Create CSV content
+  const handleExportData = () => {
+    const headers = [
+      "Event Name",
+      "Category",
+      "Location",
+      "Start Date",
+      "Status",
+      "Participants Count",
+      "Max Participants",
+    ];
+    const csvRows = events.map((event) =>
+      [
         `"${event.title}"`,
         event.category,
         `"${event.location}"`,
         formatDate(event.startDate),
-        event.status,
+        getEventStatus(event.startDate, event.endDate),
         event.participantsCount,
-        event.maxParticipants
-    ].join(','));
+        event.maxParticipants,
+      ].join(",")
+    );
 
-    const csvString = [headers.join(','), ...csvRows].join('\n');
-    
+    const csvString = [headers.join(","), ...csvRows].join("\n");
+
     // Create blob and download link
-    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
+    const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
-    
-    link.setAttribute('href', url);
-    link.setAttribute('download', `events_export_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
+
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `events_export_${new Date().toISOString().split("T")[0]}.csv`
+    );
+    link.style.visibility = "hidden";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -300,18 +356,8 @@ useEffect(() => {
     "Registrations",
     "Admin Logs",
   ];
-  const organizerTabs = [
-    "Overview",
-    "Discover Events",
-    "My Events",
-    "Analytics",
-  ];
   const studentTabs = ["Overview", "Discover Events", "My Events"];
-  const currentTabs = isAdmin
-    ? adminTabs
-    : isOrganizer
-    ? organizerTabs
-    : studentTabs;
+  const currentTabs = isAdmin ? adminTabs : studentTabs;
 
   // Layout helper
   const isFullWidth = [
@@ -327,7 +373,8 @@ useEffect(() => {
     events: eventList,
     limit,
   }: {
-     events: any[]; limit?: number 
+    events: any[];
+    limit?: number;
   }) => (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
       <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
@@ -395,14 +442,16 @@ useEffect(() => {
                 <td className="px-6 py-4">
                   <span
                     className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize ${
-                      event.status === "upcoming"
+                      getEventStatus(event.startDate, event.endDate) ===
+                      "upcoming"
                         ? "bg-blue-50 text-blue-600"
-                        : event.status === "ongoing"
+                        : getEventStatus(event.startDate, event.endDate) ===
+                          "ongoing"
                         ? "bg-green-50 text-green-600"
                         : "bg-gray-100 text-gray-600"
                     }`}
                   >
-                    {event.status}
+                    {getEventStatus(event.startDate, event.endDate)}
                   </span>
                 </td>
                 {isAdmin && (
@@ -465,7 +514,7 @@ useEffect(() => {
                       className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold uppercase ${
                         u.role === UserRole.STUDENT
                           ? "bg-blue-100 text-blue-700"
-                          : u.role === UserRole.ORGANIZER
+                          : u.role === UserRole.ADMIN
                           ? "bg-purple-100 text-purple-700"
                           : "bg-orange-100 text-orange-700"
                       }`}
@@ -480,12 +529,10 @@ useEffect(() => {
                     className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize ${
                       u.role === UserRole.STUDENT
                         ? "bg-green-100 text-green-700"
-                        : u.role === UserRole.ORGANIZER
-                        ? "bg-blue-100 text-blue-700"
                         : "bg-gray-100 text-gray-700"
                     }`}
                   >
-                    {u.role === UserRole.ORGANIZER ? "Organizer" : u.role}
+                    {u.role}
                   </span>
                 </td>
                 <td className="px-6 py-4 text-gray-500">
@@ -527,7 +574,7 @@ useEffect(() => {
   const RegistrationsTable = ({
     registrations: regList,
   }: {
-    registrations: typeof MOCK_REGISTRATIONS;
+    registrations: any[];
   }) => (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
       <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
@@ -536,7 +583,10 @@ useEffect(() => {
           <button className="p-1.5 text-gray-500 hover:bg-gray-100 rounded-lg">
             <Filter className="w-4 h-4" />
           </button>
-          <button onClick={handleExportData} className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
+          <button
+            onClick={handleExportData}
+            className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+          >
             Export CSV
           </button>
         </div>
@@ -562,17 +612,20 @@ useEffect(() => {
             ) : (
               regList.map((reg) => (
                 <tr
-                  key={reg.id}
+                  key={reg._id} // 🔑 Changed from reg.id to reg._id
                   className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors"
                 >
                   <td className="px-6 py-4 font-medium text-gray-900">
-                    {getUserName(reg.userId)}
+                    {/* 🔑 Logic: Get name from populated student object */}
+                    {reg.student?.fullName || "User"}
                   </td>
                   <td className="px-6 py-4 text-gray-600">
-                    {getEventName(reg.eventId)}
+                    {/* 🔑 Logic: Get title from populated event object */}
+                    {reg.event?.title || "Event Details"}
                   </td>
                   <td className="px-6 py-4 text-gray-500">
-                    {formatDate(reg.timestamp)}
+                    {/* 🔑 Logic: Use appliedAt date from DB */}
+                    {formatDate(reg.appliedAt || reg.createdAt)}
                   </td>
                   <td className="px-6 py-4">
                     <span
@@ -587,12 +640,13 @@ useEffect(() => {
                       {reg.status}
                     </span>
                   </td>
+
                   <td className="px-6 py-4 text-right">
-                    {reg.status === "pending" && onUpdateRegistrationStatus ? (
+                    {reg.status === "pending" ? (
                       <div className="flex justify-end gap-2">
                         <button
                           onClick={() =>
-                            onUpdateRegistrationStatus(reg.id, "approved")
+                            handleUpdateRegistrationStatus(reg._id, "approved")
                           }
                           className="p-1 text-green-600 hover:bg-green-50 rounded"
                           title="Approve"
@@ -601,7 +655,7 @@ useEffect(() => {
                         </button>
                         <button
                           onClick={() =>
-                            onUpdateRegistrationStatus(reg.id, "rejected")
+                            handleUpdateRegistrationStatus(reg._id, "rejected")
                           }
                           className="p-1 text-red-600 hover:bg-red-50 rounded"
                           title="Reject"
@@ -610,9 +664,9 @@ useEffect(() => {
                         </button>
                       </div>
                     ) : (
-                      <button className="text-gray-400 hover:text-gray-600 p-1">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </button>
+                      <div className="text-xs text-gray-400 italic">
+                        {reg.reviewedBy ? `By ${reg.reviewedBy}` : "Processed"}
+                      </div>
                     )}
                   </td>
                 </tr>
@@ -651,7 +705,7 @@ useEffect(() => {
                 <td className="px-6 py-4 text-gray-500 whitespace-nowrap">
                   <div className="flex items-center">
                     <Clock className="w-3 h-3 mr-2 text-gray-400" />
-                   {formatDate(log.timestamp)}
+                    {formatDate(log.timestamp)}
                   </div>
                 </td>
                 <td className="px-6 py-4 font-medium text-gray-900">
@@ -886,24 +940,17 @@ useEffect(() => {
             {/* Header/Greeting */}
             <div>
               <h1 className="text-2xl font-bold text-white  inline-block px-4 py-2">
-                👋{" "}
-                {isAdmin
-                  ? "Admin Dashboard"
-                  : isOrganizer
-                  ? "Organizer Dashboard"
-                  : "My Dashboard"}
+                👋 {isAdmin ? "Admin Dashboard" : "My Dashboard"}
               </h1>
               <p className="text-gray-500 text-sm mt-1">
                 {isAdmin
-                  ? "Manage platform and monitor performance"
-                  : isOrganizer
-                  ? "Manage your events and track performance"
+                  ? "Manage platform, events, and monitor performance"
                   : `Welcome back, ${user.fullName}!`}
               </p>
             </div>
             {/* Action Buttons */}
             <div className="flex gap-2">
-              {isOrganizer && (
+              {isAdmin && (
                 <button
                   onClick={onCreateEventClick}
                   className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm text-sm font-medium"
@@ -967,7 +1014,7 @@ useEffect(() => {
                 title={
                   isStudent
                     ? "Events Registered"
-                    : isOrganizer
+                    : isAdmin
                     ? "My College Events"
                     : "Total Events"
                 }
@@ -1029,7 +1076,7 @@ useEffect(() => {
           )}
 
           {/* Main Content Sections */}
-         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-1">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-1">
             <div
               className={`${
                 children
@@ -1047,7 +1094,7 @@ useEffect(() => {
                   {/* Logic for switching tab content */}
                   {activeTab === "overview" && (
                     <>
-                      {(isAdmin || isOrganizer) && (
+                      {isAdmin && (
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                           <h3 className="font-semibold text-gray-900 mb-4">
                             Registration Trends
@@ -1141,7 +1188,7 @@ useEffect(() => {
                         Quick Actions
                       </h3>
                       <div className="space-y-3">
-                        {isOrganizer && (
+                        {isAdmin && (
                           <button
                             onClick={onCreateEventClick}
                             className="w-full bg-indigo-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors flex justify-center items-center gap-2"
@@ -1149,19 +1196,19 @@ useEffect(() => {
                             <Plus className="w-4 h-4" /> Create New Event
                           </button>
                         )}
-                                <button 
-                                    onClick={() => setActiveTab('registrations')} 
-                                    className="w-full bg-gray-50 text-gray-700 py-2 px-4 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors border border-gray-200"
-                                >
-                                    View All Registrations
-                                </button>
+                        <button
+                          onClick={() => setActiveTab("registrations")}
+                          className="w-full bg-gray-50 text-gray-700 py-2 px-4 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors border border-gray-200"
+                        >
+                          View All Registrations
+                        </button>
 
-                                <button 
-                                    onClick={handleExportData}
-                                    className="w-full bg-gray-50 text-gray-700 py-2 px-4 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors border border-gray-200"
-                                >
-                                    Export Event Data
-                                </button>
+                        <button
+                          onClick={handleExportData}
+                          className="w-full bg-gray-50 text-gray-700 py-2 px-4 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors border border-gray-200"
+                        >
+                          Export Event Data
+                        </button>
                       </div>
                     </div>
 
