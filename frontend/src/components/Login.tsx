@@ -1,4 +1,12 @@
-import { ArrowRight, Mail, Lock, Github, Chrome } from "lucide-react";
+import {
+  ArrowRight,
+  Mail,
+  Lock,
+  Github,
+  Chrome,
+  Eye,
+  EyeOff,
+} from "lucide-react";
 import { useState } from "react";
 
 interface LoginProps {
@@ -13,6 +21,8 @@ export function Login({ setCurrentPage, onLoginSuccess }: LoginProps) {
     rememberMe: false,
   });
 
+  const [showPassword, setShowPassword] = useState(false);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
     setFormData({
@@ -23,50 +33,56 @@ export function Login({ setCurrentPage, onLoginSuccess }: LoginProps) {
 
   // frontend/src/components/Login.tsx (Revised handleSubmit function)
 
-const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
-        const response = await fetch('http://localhost:5000/api/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: formData.email, password: formData.password }),
-        });
+      const response = await fetch("http://localhost:5000/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
 
-        // 1. READ THE RESPONSE BODY ONCE HERE.
-        const responseData = await response.json();
+      // 1. READ THE RESPONSE BODY ONCE HERE.
+      const responseData = await response.json();
 
-        if (response.ok) {
-            // Success: status is 200-299
-            console.log("Login Successful:", responseData.message);
-            localStorage.setItem('token', responseData.token);
-            // Assuming this function is passed down from App.tsx
-           onLoginSuccess(responseData.user);
-
-        } else {
-            // Failure: status is 400 or 500. The error message is already in the 'data' object.
-            console.error("Login Failed:", responseData.message);
-            alert(`Login Failed: ${responseData.message || 'An unexpected error occurred.'}`);
-        }
+      if (response.ok) {
+        // Success: status is 200-299
+        console.log("Login Successful:", responseData.message);
+        localStorage.setItem("token", responseData.token);
+        // Assuming this function is passed down from App.tsx
+        onLoginSuccess(responseData.user);
+      } else {
+        // Failure: status is 400 or 500. The error message is already in the 'data' object.
+        console.error("Login Failed:", responseData.message);
+        alert(
+          `Login Failed: ${
+            responseData.message || "An unexpected error occurred."
+          }`
+        );
+      }
     } catch (error) {
-       console.error("Network Error or Stream Failure:", error);
-       alert("Failed to connect to the server.");
+      console.error("Network Error or Stream Failure:", error);
+      alert("Failed to connect to the server.");
     }
-};
+  };
 
   return (
     <div className="register-section">
       {/* Animated Background Particles */}
       <div className="particles-container">
         {[...Array(20)].map((_, i) => (
-          <div 
-            key={i} 
+          <div
+            key={i}
             className="particle"
             style={{
               left: `${Math.random() * 100}%`,
               top: `${Math.random() * 100}%`,
               animationDelay: `${Math.random() * 5}s`,
-              animationDuration: `${Math.random() * 10 + 10}s`
+              animationDuration: `${Math.random() * 10 + 10}s`,
             }}
           ></div>
         ))}
@@ -129,15 +145,28 @@ const handleSubmit = async (e: React.FormEvent) => {
                     <Lock className="label-icon" />
                     Password
                   </label>
-                  <input
-                    type="password"
-                    name="password"
-                    className="form-control custom-input"
-                    placeholder="Enter your password"
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    required
-                  />
+                  <div className="position-relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      name="password"
+                      className="form-control custom-input"
+                      placeholder="Enter your password"
+                      value={formData.password}
+                      onChange={handleInputChange}
+                      required
+                    />
+                    <button
+                      type="button"
+                      className="btn border-0 position-absolute top-50 end-0 translate-middle-y me-2 p-0"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <EyeOff size={20} color="gray" />
+                      ) : (
+                        <Eye size={20} color="gray" />
+                      )}
+                    </button>
+                  </div>
                 </div>
 
                 {/* Remember Me & Forgot Password */}
@@ -169,8 +198,8 @@ const handleSubmit = async (e: React.FormEvent) => {
                 {/* Register Link */}
                 <p className="login-link">
                   Don't have an account?{" "}
-                  <a 
-                    href="#" 
+                  <a
+                    href="#"
                     className="link-primary"
                     onClick={(e) => {
                       e.preventDefault();
