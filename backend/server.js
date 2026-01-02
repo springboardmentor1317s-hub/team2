@@ -27,9 +27,13 @@ app.use(express.urlencoded({ limit: '10mb', extended: true }));
 // --- Database Connection ---
 const PORT = process.env.PORT || 5000;
 
-mongoose.connect(process.env.MONGO_URI)
-    .then(() => console.log('MongoDB connected successfully!'))
-    .catch(err => console.error('MongoDB connection error:', err));
+mongoose.connect(process.env.MONGO_URI, {
+  // If it can't connect in 5 seconds, throw an error immediately
+  serverSelectionTimeoutMS: 5000, 
+  // Close the socket if it's inactive for 45s
+  socketTimeoutMS: 45000,
+}).then(() => console.log('MongoDB connected successfully!'))
+  .catch(err => console.error('MongoDB connection error:', err));
 
 // --- API Routes ---
 // Base route
@@ -42,6 +46,9 @@ app.use('/api/auth', authRoutes);
 
 // Events routes (Get, Filter, Create)
 app.use('/api/events', eventRoutes);
+
+// Registration routes (Apply, Approve/Reject)
+app.use('/api/registrations', require('./routes/registration'));
 
 // --- Start Server ---
 app.listen(PORT, () => {
