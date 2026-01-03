@@ -16,6 +16,25 @@ const getEvents = async (req, res) => {
     });
   }
 };
+
+const getMyEvents = async (req, res) => {
+  try {
+    const events = await Event.find({
+      adminId: req.user._id,
+    }).sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      data: events,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 const filterEvent = async (req, res) => {
   try {
     const { status, category, dateFrom, dateTo } = req.query;
@@ -67,6 +86,7 @@ const filterEvent = async (req, res) => {
 };
 
 const createEvent = async (req, res) => {
+  console.log("request: ", req.user);
   try {
     const {
       title,
@@ -109,14 +129,14 @@ const createEvent = async (req, res) => {
       description,
       maxParticipants: maxParticipants || 100,
       collegeId,
-      organizerId: req.user.id,
+      adminId: req.user.id,
       imageUrl:
         imageUrl || `https://picsum.photos/seed/${Math.random()}/800/400`,
       participantsCount: 0,
       status: "upcoming",
       tags: [],
     });
-
+    console.log(event);
     res.status(201).json({
       success: true,
       message: "Event created successfully",
@@ -142,6 +162,7 @@ const createEvent = async (req, res) => {
 
 module.exports = {
   getEvents,
+  getMyEvents,
   filterEvent,
   createEvent,
 };
