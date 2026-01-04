@@ -9,6 +9,7 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const authRoutes = require('./routes/auth');
+const eventRoutes = require('./routes/events');
 
 const app = express();
 
@@ -20,7 +21,8 @@ app.use(cors({
 }));
 
 // Body parser for JSON data
-app.use(express.json());
+app.use(express.json({ limit: '10mb' })); 
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // --- Database Connection ---
 const PORT = process.env.PORT || 5000;
@@ -37,6 +39,9 @@ app.get('/', (req, res) => {
 
 // Authentication routes (Register/Login)
 app.use('/api/auth', authRoutes);
+
+// Events routes (Get, Filter, Create)
+app.use('/api/events', eventRoutes);
 
 // --- Start Server ---
 app.listen(PORT, () => {
