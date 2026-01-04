@@ -49,7 +49,8 @@ router.post('/register', async (req, res) => {
                 id: user._id,
                 fullName: user.fullName,
                 email: user.email,
-                university: user.university
+                university: user.university,
+                role: user.role
             }
         });
 
