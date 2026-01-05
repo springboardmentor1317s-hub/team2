@@ -321,115 +321,109 @@ useEffect(() => {
     "admin logs",
   ].includes(activeTab);
 
-  // --- TABLE COMPONENTS (Updated to use MOCK data and props) ---
-
-  const RecentEventsTable = ({
-    events: eventList,
-    limit,
-  }: {
-     events: any[]; limit?: number 
-  }) => (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-        <h3 className="font-semibold text-gray-900">
-          {activeTab === "event management"
-            ? "Event Management"
-            : "Recent Events"}
-        </h3>
-        {isAdmin && activeTab === "event management" && (
-          <button className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
-            Approve Pending Flagged Events
-          </button>
-        )}
-        {!isAdmin && activeTab !== "event management" && (
-          <button
-            onClick={() => setCurrentPage("discover")}
-            className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
-          >
-            View All
-          </button>
-        )}
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left">
-          <thead className="text-xs text-gray-500 uppercase bg-gray-50/50">
-            <tr>
-              <th className="px-6 py-3 font-medium">Event Name</th>
-              <th className="px-6 py-3 font-medium">Category</th>
-              <th className="px-6 py-3 font-medium">Date</th>
-              <th className="px-6 py-3 font-medium">Status</th>
-              {isAdmin && (
-                <th className="px-6 py-3 font-medium text-right">Actions</th>
-              )}
-            </tr>
-          </thead>
-          <tbody>
-            {eventList.slice(0, limit || eventList.length).map((event) => (
-              <tr
-                key={event._id || event.id}
-                className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors"
-              >
-                <td className="px-6 py-4 font-medium text-gray-900">
-                  <div className="flex items-center">
-                    <div className="w-8 h-8 rounded bg-indigo-100 text-indigo-600 flex items-center justify-center mr-3">
-                      <Calendar className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="font-medium line-clamp-1">
-                        {event.title}
-                      </div>
-                      <div className="text-xs text-gray-500 line-clamp-1">
-                        {event.location}
-                      </div>
-                    </div>
+ // --- 🔑 UPDATED TABLE COMPONENT WITH EDIT/DELETE FOR ORGANIZERS ---
+const RecentEventsTable = ({
+  events: eventList,
+  limit,
+}: {
+  events: any[]; limit?: number 
+}) => (
+  <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+      <h3 className="font-semibold text-gray-900">
+        {activeTab === "event management" || activeTab === "my events"
+          ? "Manage Events"
+          : "Recent Events"}
+      </h3>
+      {/* Show Create button for organizers in My Events tab */}
+      {isOrganizer && activeTab === "my events" && (
+        <button 
+          onClick={onCreateEventClick}
+          className="flex items-center gap-1 text-sm bg-indigo-600 text-white px-3 py-1.5 rounded-lg hover:bg-indigo-700 transition-colors"
+        >
+          <Plus className="w-4 h-4" /> Create Event
+        </button>
+      )}
+    </div>
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm text-left">
+        <thead className="text-xs text-gray-500 uppercase bg-gray-50/50">
+          <tr>
+            <th className="px-6 py-3 font-medium">Event Name</th>
+            <th className="px-6 py-3 font-medium">Category</th>
+            <th className="px-6 py-3 font-medium">Date</th>
+            <th className="px-6 py-3 font-medium">Status</th>
+            {/* 🔑 Changed: Show header if Admin OR Organizer */}
+            {(isAdmin || isOrganizer) && (
+              <th className="px-6 py-3 font-medium text-right">Actions</th>
+            )}
+          </tr>
+        </thead>
+        <tbody>
+          {eventList.slice(0, limit || eventList.length).map((event) => (
+            <tr
+              key={event._id || event.id}
+              className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors"
+            >
+              <td className="px-6 py-4 font-medium text-gray-900">
+                <div className="flex items-center">
+                  <div className="w-8 h-8 rounded bg-indigo-100 text-indigo-600 flex items-center justify-center mr-3">
+                    <Calendar className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="font-medium line-clamp-1">{event.title}</div>
+                    <div className="text-xs text-gray-500 line-clamp-1">{event.location}</div>
+                  </div>
+                </div>
+              </td>
+              <td className="px-6 py-4">
+                <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 capitalize">
+                  {event.category}
+                </span>
+              </td>
+              <td className="px-6 py-4 text-gray-500">
+                {formatDate(event.startDate)}
+              </td>
+              <td className="px-6 py-4">
+                <span className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize ${
+                  event.status === "upcoming" ? "bg-blue-50 text-blue-600" : "bg-green-50 text-green-600"
+                }`}>
+                  {event.status}
+                </span>
+              </td>
+              
+              {/* 🔑 NEW ACTION LOGIC FOR ORGANIZER */}
+              {(isAdmin || isOrganizer) && (
+                <td className="px-6 py-4 text-right">
+                  <div className="flex justify-end gap-2">
+                    <button 
+                      className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"
+                      title="Edit Event"
+                      onClick={() => console.log("Edit event:", event.id)} 
+                    >
+                      <Settings className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        if(window.confirm("Delete this event?")) {
+                          onDeleteEvent && onDeleteEvent(event._id || event.id);
+                        }
+                      }}
+                      className="p-1.5 text-red-600 hover:bg-red-50 rounded"
+                      title="Delete Event"
+                    >
+                      <XIcon className="w-4 h-4" />
+                    </button>
                   </div>
                 </td>
-                <td className="px-6 py-4">
-                  <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 capitalize">
-                    {event.category}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-gray-500">
-                  {formatDate(event.startDate)}
-                </td>
-                <td className="px-6 py-4">
-                  <span
-                    className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize ${
-                      event.status === "upcoming"
-                        ? "bg-blue-50 text-blue-600"
-                        : event.status === "ongoing"
-                        ? "bg-green-50 text-green-600"
-                        : "bg-gray-100 text-gray-600"
-                    }`}
-                  >
-                    {event.status}
-                  </span>
-                </td>
-                {isAdmin && (
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-2">
-                      <button className="text-indigo-600 hover:text-indigo-800 text-xs font-medium hover:underline p-1">
-                        View
-                      </button>
-                      {onDeleteEvent && (
-                        <button
-                          onClick={() => onDeleteEvent(event.id)}
-                          className="text-red-600 hover:bg-red-50 p-1 rounded"
-                          title="Delete Event"
-                        >
-                          <XIcon className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                )}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+              )}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
-  );
+  </div>
+);
 
   const UserActivityTable = () => (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -1220,3 +1214,4 @@ useEffect(() => {
 
 // Export the component as default for flexibility in imports
 export default Dashboard;
+
