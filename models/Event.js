@@ -19,7 +19,7 @@ const EventSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    organizerId: {
+    adminId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
@@ -67,5 +67,12 @@ const EventSchema = new mongoose.Schema({
         default: Date.now
     }
 });
+
+// Add indexes for better query performance
+EventSchema.index({ startDate: 1 });
+EventSchema.index({ category: 1 });
+EventSchema.index({ collegeName: 1 });
+EventSchema.index({ status: 1 });
+EventSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model('Event', EventSchema);

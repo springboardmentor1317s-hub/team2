@@ -1,18 +1,44 @@
 const express = require('express');
 const Event = require('../models/Event');
-const auth = require('../middleware/auth');
+const { protect, isAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 
 // @route   GET /api/events
-// @desc    Get all events
+// @desc    Get events with pagination
 // @access  Public
 router.get('/', async (req, res) => {
+    const startTime = Date.now();
     try {
-        const events = await Event.find().sort({ createdAt: -1 });
+        console.log('[Events API] Request received');
+        
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+        const skip = (page - 1) * limit;
+        
+        console.log(`[Events API] Querying DB - page: ${page}, limit: ${limit}`);
+        const queryStart = Date.now();
+        
+        // DON'T include imageUrl in list view - it's too large (base64 images)
+        const events = await Event.find()
+            .select('title collegeName category location startDate endDate status participantsCount maxParticipants')
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .lean();
+            
+        console.log(`[Events API] Query completed in ${Date.now() - queryStart}ms`);
+        
+        const total = await Event.countDocuments();
+        
+        console.log(`[Events API] Total time: ${Date.now() - startTime}ms`);
+        
         res.status(200).json({
             success: true,
             count: events.length,
+            total,
+            page,
+            pages: Math.ceil(total / limit),
             data: events
         });
 
@@ -21,6 +47,33 @@ router.get('/', async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Error fetching events'
+        });
+    }
+});
+
+// @route   GET /api/events/:id
+// @desc    Get single event with full details including image
+// @access  Public
+router.get('/:id', async (req, res) => {
+    try {
+        const event = await Event.findById(req.params.id).lean();
+        
+        if (!event) {
+            return res.status(404).json({
+                success: false,
+                message: 'Event not found'
+            });
+        }
+        
+        res.status(200).json({
+            success: true,
+            data: event
+        });
+    } catch (error) {
+        console.error('Get Event Error:', error.message);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching event'
         });
     }
 });
@@ -81,8 +134,8 @@ router.get('/filter', async (req, res) => {
 
 // @route   POST /api/events
 // @desc    Create a new event
-// @access  Private (Organizer/Admin)
-router.post('/', auth, async (req, res) => {
+// @access  Private (Admin only)
+router.post('/', protect, isAdmin, async (req, res) => {
     try {
         const { title, collegeName, category, location, startDate, endDate, description, maxParticipants, collegeId, imageUrl } = req.body;
 
@@ -94,7 +147,7 @@ router.post('/', auth, async (req, res) => {
             });
         }
 
-        // Create event with organizerId from authenticated user
+        // Create event with adminId from authenticated user
         const event = await Event.create({
             title,
             collegeName,
@@ -105,7 +158,7 @@ router.post('/', auth, async (req, res) => {
             description,
             maxParticipants: maxParticipants || 100,
             collegeId,
-            organizerId: req.user.id,
+            adminId: req.user.id,
             imageUrl: imageUrl || `https://picsum.photos/seed/${Math.random()}/800/400`,
             participantsCount: 0,
             status: 'upcoming',
