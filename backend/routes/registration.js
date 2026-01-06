@@ -1,7 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const Registration = require('../models/Registration');
+const Event = require('../models/Event');
+const User = require('../models/User');
 const { protect, isAdmin } = require('../middleware/auth');
+const NotificationService = require('../services/notificationService');
 
 // 1. STUDENT: Register for an event
 // POST /api/registrations
@@ -13,15 +16,38 @@ router.post('/', protect, async (req, res) => {
       return res.status(400).json({ message: "Event ID is required" });
     }
 
-    // Use 'event' and 'student' to match your Registration.js schema
+    // Check if user already registered for this event
+    const existingRegistration = await Registration.findOne({
+      event: eventId,
+      student: req.user._id
+    });
+
+    if (existingRegistration) {
+      return res.status(400).json({ message: "You have already registered for this event" });
+    }
+
+    // Get event details for notification
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+
+    // Create registration
     const registration = await Registration.create({
       event: eventId,      
       student: req.user._id, 
       studentName: req.user.fullName,
       status: 'pending',
       appliedAt: Date.now()
-      
     });
+
+    // 🔥 AUTO-TRIGGER: Notify admin about new registration
+    try {
+      await NotificationService.notifyNewRegistration(registration, event, event.adminId);
+    } catch (notificationError) {
+      console.error('Failed to send new registration notification:', notificationError);
+      // Don't fail the registration if notification fails
+    }
 
     res.status(201).json(registration);
   } catch (error) {
@@ -51,16 +77,32 @@ router.put('/:id/status', protect, isAdmin, async (req, res) => {
   try {
     const { status } = req.body; // status is 'approved' or 'rejected'
 
-    const registration = await Registration.findById(req.params.id);
+    const registration = await Registration.findById(req.params.id)
+      .populate('event', 'title collegeName adminId');
+    
     if (!registration) {
       return res.status(404).json({ message: 'Registration not found' });
     }
 
+    // Update registration status
     registration.status = status;
-    registration.reviewedBy = req.user.fullName; // Tracking admin name
+    registration.reviewedBy = req.user.fullName;
     registration.reviewedAt = Date.now();
 
     await registration.save();
+
+    // 🔥 AUTO-TRIGGER: Notify student about registration decision
+    try {
+      if (status === 'approved') {
+        await NotificationService.notifyRegistrationApproved(registration, registration.event);
+      } else if (status === 'rejected') {
+        await NotificationService.notifyRegistrationRejected(registration, registration.event);
+      }
+    } catch (notificationError) {
+      console.error('Failed to send registration status notification:', notificationError);
+      // Don't fail the status update if notification fails
+    }
+
     res.json(registration);
   } catch (error) {
     res.status(500).json({ message: error.message });

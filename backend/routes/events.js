@@ -1,6 +1,8 @@
 const express = require('express');
 const Event = require('../models/Event');
+const User = require('../models/User');
 const { protect, isAdmin } = require('../middleware/auth');
+const NotificationService = require('../services/notificationService');
 
 const router = express.Router();
 
@@ -165,6 +167,20 @@ router.post('/', protect, isAdmin, async (req, res) => {
             tags: []
         });
 
+        // 🔥 AUTO-TRIGGER: Notify all students about new event
+        try {
+            // Get all student user IDs (you might want to filter by university/college)
+            const students = await User.find({ role: 'student' }).select('_id');
+            const studentIds = students.map(student => student._id);
+            
+            if (studentIds.length > 0) {
+                await NotificationService.notifyEventCreated(event, studentIds);
+            }
+        } catch (notificationError) {
+            console.error('Failed to send event created notifications:', notificationError);
+            // Don't fail event creation if notification fails
+        }
+
         res.status(201).json({
             success: true,
             message: 'Event created successfully',
@@ -190,3 +206,122 @@ router.post('/', protect, isAdmin, async (req, res) => {
 });
 
 module.exports = router;
+
+// @route   PUT /api/events/:id
+// @desc    Update an event
+// @access  Private (Admin only)
+router.put('/:id', protect, isAdmin, async (req, res) => {
+    try {
+        const event = await Event.findById(req.params.id);
+        
+        if (!event) {
+            return res.status(404).json({
+                success: false,
+                message: 'Event not found'
+            });
+        }
+
+        // Check if admin owns this event
+        if (event.adminId.toString() !== req.user.id) {
+            return res.status(403).json({
+                success: false,
+                message: 'Not authorized to update this event'
+            });
+        }
+
+        // Update event
+        const updatedEvent = await Event.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            { new: true, runValidators: true }
+        );
+
+        // 🔥 AUTO-TRIGGER: Notify registered students about event update
+        try {
+            const Registration = require('../models/Registration');
+            const registrations = await Registration.find({ 
+                event: req.params.id, 
+                status: 'approved' 
+            }).select('student');
+            
+            const registeredStudentIds = registrations.map(reg => reg.student);
+            
+            if (registeredStudentIds.length > 0) {
+                await NotificationService.notifyEventUpdated(updatedEvent, registeredStudentIds);
+            }
+        } catch (notificationError) {
+            console.error('Failed to send event updated notifications:', notificationError);
+        }
+
+        res.json({
+            success: true,
+            message: 'Event updated successfully',
+            data: updatedEvent
+        });
+
+    } catch (error) {
+        console.error('Update Event Error:', error.message);
+        res.status(500).json({
+            success: false,
+            message: 'Error updating event'
+        });
+    }
+});
+
+// @route   PUT /api/events/:id/cancel
+// @desc    Cancel an event
+// @access  Private (Admin only)
+router.put('/:id/cancel', protect, isAdmin, async (req, res) => {
+    try {
+        const event = await Event.findById(req.params.id);
+        
+        if (!event) {
+            return res.status(404).json({
+                success: false,
+                message: 'Event not found'
+            });
+        }
+
+        // Check if admin owns this event
+        if (event.adminId.toString() !== req.user.id) {
+            return res.status(403).json({
+                success: false,
+                message: 'Not authorized to cancel this event'
+            });
+        }
+
+        // Update event status to cancelled
+        event.status = 'cancelled';
+        await event.save();
+
+        // 🔥 AUTO-TRIGGER: Notify registered students about event cancellation
+        try {
+            const Registration = require('../models/Registration');
+            const registrations = await Registration.find({ 
+                event: req.params.id, 
+                status: 'approved' 
+            }).select('student');
+            
+            const registeredStudentIds = registrations.map(reg => reg.student);
+            
+            if (registeredStudentIds.length > 0) {
+                await NotificationService.notifyEventCancelled(event, registeredStudentIds);
+            }
+        } catch (notificationError) {
+            console.error('Failed to send event cancelled notifications:', notificationError);
+        }
+
+        res.json({
+            success: true,
+            message: 'Event cancelled successfully',
+            data: event
+        });
+
+    } catch (error) {
+        console.error('Cancel Event Error:', error.message);
+        res.status(500).json({
+            success: false,
+            message: 'Error cancelling event'
+        });
+    }
+});

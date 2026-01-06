@@ -1,7 +1,9 @@
 const express = require("express");
 const router = express.Router();
 const Notification = require("../models/Notification");
+const User = require("../models/User");
 const { protect, isAdmin } = require("../middleware/auth");
+const NotificationService = require("../services/notificationService");
 
 // GET /api/notifications - Get user's notifications with pagination and filtering
 router.get('/', protect, async (req, res) => {
@@ -239,6 +241,41 @@ router.post('/broadcast', protect, isAdmin, async (req, res) => {
     } catch (error) {
         console.error('Broadcast notification error:', error);
         res.status(500).json({ msg: 'Server error while broadcasting notifications' });
+    }
+});
+
+// POST /api/notifications/system-announcement - Send system announcement to all users (Admin only)
+router.post('/system-announcement', protect, isAdmin, async (req, res) => {
+    try {
+        const { title, message, priority = 'medium', targetRole } = req.body;
+
+        // Validation
+        if (!title || !message) {
+            return res.status(400).json({ 
+                msg: 'Title and message are required' 
+            });
+        }
+
+        // Get target users based on role filter
+        const filter = targetRole ? { role: targetRole } : {};
+        const users = await User.find(filter).select('_id');
+        const userIds = users.map(user => user._id);
+
+        if (userIds.length === 0) {
+            return res.status(400).json({ msg: 'No users found for the specified criteria' });
+        }
+
+        // Send system announcement using the service
+        await NotificationService.notifySystemAnnouncement(title, message, userIds, priority);
+
+        res.status(201).json({
+            msg: `System announcement sent to ${userIds.length} users`,
+            count: userIds.length
+        });
+
+    } catch (error) {
+        console.error('System announcement error:', error);
+        res.status(500).json({ msg: 'Server error while sending system announcement' });
     }
 });
 
