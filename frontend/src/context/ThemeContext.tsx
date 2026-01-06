@@ -13,9 +13,19 @@ const ThemeContext = createContext<ThemeContextProps | undefined>(undefined);
 
 // Helper function to apply theme to DOM
 const applyTheme = (theme: Theme) => {
-  const root = window.document.documentElement;
-  root.classList.remove("dark", "light");
+  const root = document.documentElement;
+
+  // Remove both classes first
+  root.classList.remove("light", "dark");
+
+  // Add the current theme class
   root.classList.add(theme);
+
+  // Also set data attribute for any CSS that might use it
+  root.setAttribute("data-theme", theme);
+
+  // Force remove any system preference listening
+  root.style.colorScheme = theme;
 };
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -26,38 +36,36 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
     // Try to get from localStorage first
     const storedTheme = localStorage.getItem("theme") as Theme | null;
     if (storedTheme === "dark" || storedTheme === "light") {
-      applyTheme(storedTheme);
       return storedTheme;
     }
 
-    // Fall back to system preference
-    if (
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-color-scheme: dark)").matches
-    ) {
-      applyTheme("dark");
-      return "dark";
-    }
-
-    // Default to light
-    applyTheme("light");
+    // Default to light (don't use system preference)
     return "light";
   });
 
+  // Apply theme on mount and whenever it changes
+  useEffect(() => {
+    console.log("Applying theme:", theme);
+    console.log(
+      "HTML classes before:",
+      document.documentElement.classList.toString()
+    );
+    applyTheme(theme);
+    localStorage.setItem("theme", theme);
+    console.log(
+      "HTML classes after:",
+      document.documentElement.classList.toString()
+    );
+  }, [theme]);
+
   const toggleTheme = () => {
+    console.log("Toggle clicked, current theme:", theme);
     setTheme((currentTheme) => {
       const newTheme = currentTheme === "light" ? "dark" : "light";
-      applyTheme(newTheme);
-      localStorage.setItem("theme", newTheme);
+      console.log("Switching to:", newTheme);
       return newTheme;
     });
   };
-
-  // Apply theme whenever it changes from toggle
-  useEffect(() => {
-    applyTheme(theme);
-    localStorage.setItem("theme", theme);
-  }, [theme]);
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>

@@ -16,70 +16,94 @@ export const EventsDiscoveryPage: React.FC<EventsDiscoveryPageProps> = ({
   const [events, setEvents] = useState<Event[]>(initialEvents);
   const [loading, setLoading] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
-  
+
   // 🔑 Tracks which events the student has already registered for in DB
   const [userRegistrations, setUserRegistrations] = useState<string[]>([]);
-  
+
+  // 🔑 Tracks all registrations for calculating participant counts
+  const [allRegistrations, setAllRegistrations] = useState<any[]>([]);
+
   // Filters
   const [dateFilter, setDateFilter] = useState<string>("");
   const [collegeFilter, setCollegeFilter] = useState<string>("all");
-  const [maxParticipantsFilter, setMaxParticipantsFilter] = useState<string>("");
+  const [maxParticipantsFilter, setMaxParticipantsFilter] =
+    useState<string>("");
 
   // --- 1. FETCH LIVE DATA FROM MONGODB ---
- useEffect(() => {
-  let isMounted = true; // Prevents state updates on unmounted components
+  useEffect(() => {
+    let isMounted = true; // Prevents state updates on unmounted components
 
-  const fetchData = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const [eventsRes, regRes] = await Promise.all([
-        fetch('http://localhost:5000/api/events'),
-        token ? fetch('http://localhost:5000/api/registrations/my', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        }) : Promise.resolve(null)
-      ]);
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const [eventsRes, regRes, allRegRes] = await Promise.all([
+          fetch("http://localhost:5000/api/events"),
+          token
+            ? fetch("http://localhost:5000/api/registrations/my", {
+                headers: { Authorization: `Bearer ${token}` },
+              })
+            : Promise.resolve(null),
+          token
+            ? fetch("http://localhost:5000/api/registrations/all", {
+                headers: { Authorization: `Bearer ${token}` },
+              })
+            : Promise.resolve(null),
+        ]);
 
-      const [eventsData, regData] = await Promise.all([
-        eventsRes.json(),
-        regRes ? regRes.json() : Promise.resolve(null)
-      ]);
+        const [eventsData, regData, allRegData] = await Promise.all([
+          eventsRes.json(),
+          regRes ? regRes.json() : Promise.resolve(null),
+          allRegRes.json(),
+        ]);
 
-      if (isMounted) {
-        if (eventsData.success) setEvents(eventsData.data);
-        if (Array.isArray(regData)) {
-          setUserRegistrations(regData.map((r: any) => r.event?._id));
+        if (isMounted) {
+          if (eventsData.success) setEvents(eventsData.data);
+          if (Array.isArray(regData)) {
+            setUserRegistrations(regData.map((r: any) => r.event?._id));
+          }
+          // Handle both array format and {success: true, data: [...]} format
+          if (Array.isArray(allRegData)) {
+            console.log("All registrations (array):", allRegData);
+            setAllRegistrations(allRegData);
+          } else if (allRegData?.success && Array.isArray(allRegData.data)) {
+            console.log("All registrations (data):", allRegData.data);
+            setAllRegistrations(allRegData.data);
+          } else {
+            console.log("All registrations response:", allRegData);
+          }
+          setLoading(false);
         }
-        setLoading(false);
+      } catch (error) {
+        if (isMounted) {
+          console.error("Fetch error:", error);
+          setLoading(false);
+        }
       }
-    } catch (error) {
-      if (isMounted) {
-        console.error("Fetch error:", error);
-        setLoading(false);
-      }
-    }
-  };
+    };
 
-  fetchData();
-  return () => { isMounted = false; }; // Cleanup function
-}, []);
+    fetchData();
+    return () => {
+      isMounted = false;
+    }; // Cleanup function
+  }, []);
 
   // --- 2. REGISTRATION HANDLER ---
   const handleRegister = async (eventId: string) => {
     console.log("Registering for Event ID:", eventId); // 👈 Add this
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       if (!token) {
         alert("Please login to register for events!");
         return;
       }
 
-      const response = await fetch('http://localhost:5000/api/registrations', {
-        method: 'POST',
+      const response = await fetch("http://localhost:5000/api/registrations", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ eventId })
+        body: JSON.stringify({ eventId }),
       });
 
       const data = await response.json();
@@ -87,8 +111,8 @@ export const EventsDiscoveryPage: React.FC<EventsDiscoveryPageProps> = ({
       if (response.ok) {
         alert("✅ Registration submitted! Waiting for Admin approval.");
         // Update local state so UI reflects "Registered" immediately
-        setUserRegistrations(prev => [...prev, eventId]);
-        setSelectedEvent(null); 
+        setUserRegistrations((prev) => [...prev, eventId]);
+        setSelectedEvent(null);
       } else {
         alert(`❌ ${data.message}`);
       }
@@ -105,15 +129,34 @@ export const EventsDiscoveryPage: React.FC<EventsDiscoveryPageProps> = ({
     setMaxParticipantsFilter("");
   };
 
-const collegeOptions = Array.isArray(events) 
-  ? Array.from(new Set(events.map((e) => e.collegeName).filter(Boolean)))
-  : [];
+  const collegeOptions = Array.isArray(events)
+    ? Array.from(new Set(events.map((e) => e.collegeName).filter(Boolean)))
+    : [];
+
+  // 🔑 Helper function to get total participant count (all registrations - approved + pending)
+  const getParticipantCount = (eventId: string) => {
+    const count = allRegistrations.filter(
+      (reg: any) =>
+        String(reg.eventId) === String(eventId) ||
+        String(reg.event?._id) === String(eventId) ||
+        String(reg.event?.id) === String(eventId)
+    ).length;
+    console.log(
+    );
+    return count;
+  };
 
   const filteredEvents = events.filter((event) => {
     const q = searchTerm.trim().toLowerCase();
-    const matchesSearch = !q || event.title.toLowerCase().includes(q) || event.category.toLowerCase().includes(q);
-    const matchesCollege = collegeFilter === "all" ? true : event.collegeName === collegeFilter;
-    const matchesMax = !maxParticipantsFilter ? true : (event.maxParticipants ?? Infinity) <= Number(maxParticipantsFilter);
+    const matchesSearch =
+      !q ||
+      event.title.toLowerCase().includes(q) ||
+      event.category.toLowerCase().includes(q);
+    const matchesCollege =
+      collegeFilter === "all" ? true : event.collegeName === collegeFilter;
+    const matchesMax = !maxParticipantsFilter
+      ? true
+      : (event.maxParticipants ?? Infinity) <= Number(maxParticipantsFilter);
 
     const matchesDate = (() => {
       if (!dateFilter) return true;
@@ -136,7 +179,7 @@ const collegeOptions = Array.isArray(events)
   }
 
   return (
-    <div className="discovery-page p-4 sm:p-8 min-h-screen bg-[#0f172a]">
+    <div className="discovery-page p-4 sm:p-8 min-h-screen">
       <div className="max-w-7xl mx-auto bg-white rounded-2xl p-6 sm:p-8 shadow-lg border border-gray-100">
         <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-2">
           Explore Campus Events
@@ -170,7 +213,9 @@ const collegeOptions = Array.isArray(events)
             </div>
 
             <div className="flex gap-2 items-center">
-              <label className="text-sm text-gray-600 font-medium">College</label>
+              <label className="text-sm text-gray-600 font-medium">
+                College
+              </label>
               <select
                 className="border px-2 py-1 rounded-md bg-white text-gray-900"
                 value={collegeFilter}
@@ -178,7 +223,9 @@ const collegeOptions = Array.isArray(events)
               >
                 <option value="all">All Colleges</option>
                 {collegeOptions.map((c) => (
-                  <option key={c} value={c}>{c}</option>
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
                 ))}
               </select>
             </div>
@@ -210,6 +257,7 @@ const collegeOptions = Array.isArray(events)
                 key={event._id}
                 event={event}
                 onClick={(ev) => setSelectedEvent(ev)}
+                participantCount={getParticipantCount(event._id)}
               />
             ))}
           </div>
@@ -218,7 +266,7 @@ const collegeOptions = Array.isArray(events)
             <h3 className="text-xl font-semibold text-gray-500">
               No Events Found Matching Your Criteria
             </h3>
-            <button 
+            <button
               onClick={clearFilters}
               className="mt-4 text-indigo-600 font-medium hover:underline"
             >
@@ -234,7 +282,11 @@ const collegeOptions = Array.isArray(events)
           onClose={() => setSelectedEvent(null)}
           onRegister={handleRegister}
           // 🔑 Pass TRUE if the student is already in the database for this event
-          isRegistered={selectedEvent ? userRegistrations.includes(selectedEvent._id) : false}
+          isRegistered={
+            selectedEvent
+              ? userRegistrations.includes(selectedEvent._id)
+              : false
+          }
         />
       </div>
     </div>
