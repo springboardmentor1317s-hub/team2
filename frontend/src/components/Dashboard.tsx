@@ -215,6 +215,9 @@ export function Dashboard({
   const getEventName = (id: string) =>
     events.find((e) => (e._id || e.id) === id)?.title || "Unknown Event";
 
+  const getCollegeName = (id: string) =>
+    events.find((e) => (e._id || e.id) === id)?.collegeName || "N/A";
+
   const getUserName = (id: string) =>
     allUsers.find((u) => u.id === id)?.name || "Unknown User";
 
@@ -306,6 +309,32 @@ export function Dashboard({
       )
     : registrations;
 
+  // 🔑 NEW: Filter events for admin - show only events created by this admin
+  const adminOwnedEvents = isAdmin
+    ? events.filter((event) => {
+        // Compare adminId with user.id
+        // adminId could be a string or ObjectId, and could be stored as _id property
+        const eventAdminId = String(event.adminId || event.admin?._id || "");
+        const userId = String(user.id || "");
+        const isMatch = eventAdminId === userId;
+        return isMatch;
+      })
+    : events;
+
+  // 🔑 NEW: Filter registrations for admin - show only registrations for events they created
+  const adminOwnedRegistrations = isAdmin
+    ? registrations.filter((reg) => {
+        // Get the event ID from registration
+        const eventId = String(reg.eventId || reg.event?._id || "");
+        // Check if this event is in the admin's owned events
+        const isOwnedEvent = adminOwnedEvents.some((event) => {
+          const eid = String(event._id || event.id || "");
+          return eid === eventId;
+        });
+        return isOwnedEvent;
+      })
+    : registrations;
+
   // Create CSV content
   const handleExportData = () => {
     const headers = [
@@ -365,6 +394,7 @@ export function Dashboard({
     "event management",
     "registrations",
     "admin logs",
+    "my events",
   ].includes(activeTab);
 
   // --- TABLE COMPONENTS (Updated to use MOCK data and props) ---
@@ -573,8 +603,10 @@ export function Dashboard({
 
   const RegistrationsTable = ({
     registrations: regList,
+    showAdminActions = true,
   }: {
     registrations: any[];
+    showAdminActions?: boolean;
   }) => (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
       <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
@@ -642,7 +674,7 @@ export function Dashboard({
                   </td>
 
                   <td className="px-6 py-4 text-right">
-                    {reg.status === "pending" ? (
+                    {showAdminActions && reg.status === "pending" ? (
                       <div className="flex justify-end gap-2">
                         <button
                           onClick={() =>
@@ -663,9 +695,19 @@ export function Dashboard({
                           <XIcon className="w-4 h-4" />
                         </button>
                       </div>
-                    ) : (
+                    ) : showAdminActions ? (
                       <div className="text-xs text-gray-400 italic">
-                        {reg.reviewedBy ? `By ${reg.reviewedBy}` : "Processed"}
+                        Processed
+                      </div>
+                    ) : reg.status === "pending" ? (
+                      <div className="text-xs text-yellow-600 font-medium italic">
+                        Waiting...
+                      </div>
+                    ) : (
+                      <div className="text-xs text-gray-600 font-medium">
+                        {getCollegeName(
+                          reg.eventId || reg.event?._id || reg.event?.id
+                        )}
                       </div>
                     )}
                   </td>
@@ -939,7 +981,7 @@ export function Dashboard({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             {/* Header/Greeting */}
             <div>
-              <h1 className="text-2xl font-bold text-white  inline-block px-4 py-2">
+              <h1 className="text-2xl font-bold inline-block px-4 py-2">
                 👋 {isAdmin ? "Admin Dashboard" : "My Dashboard"}
               </h1>
               <p className="text-gray-500 text-sm mt-1">
@@ -1015,27 +1057,31 @@ export function Dashboard({
                   isStudent
                     ? "Events Registered"
                     : isAdmin
-                    ? "My College Events"
+                    ? "Events Registered"
                     : "Total Events"
                 }
                 value={events.length}
+                //value={isStudent ? registrations.length : events.length}//
                 change="12%"
                 isPositive={true}
                 icon={<Calendar className="w-5 h-5" />}
                 color="bg-blue-500"
               />
               <StatCard
-                title={isAdmin ? "Total Active Users" : "Upcoming Events"}
+                title={isAdmin ? "My College Events" : "Upcoming Events"}
                 value={
                   isAdmin
-                    ? allUsers.length
-                    : events.filter((e) => e.status === "upcoming").length
+                    ? adminOwnedEvents.length
+                    : events.filter(
+                        (e) =>
+                          getEventStatus(e.startDate, e.endDate) === "upcoming"
+                      ).length
                 }
                 change="8%"
                 isPositive={true}
                 icon={
                   isAdmin ? (
-                    <Users className="w-5 h-5" />
+                    <Calendar className="w-5 h-5" />
                   ) : (
                     <Activity className="w-5 h-5" />
                   )
@@ -1045,7 +1091,9 @@ export function Dashboard({
               <StatCard
                 title={isStudent ? "Total Registrations" : "Total Participants"}
                 value={
-                  isStudent ? dashboardRegistrations.length : totalParticipants
+                  isStudent
+                    ? registrations.length
+                    : adminOwnedRegistrations.length
                 }
                 change="23%"
                 isPositive={true}
@@ -1053,24 +1101,25 @@ export function Dashboard({
                 color="bg-purple-500"
               />
               <StatCard
-                title={
-                  isAdmin ? "Pending Reviews" : "Avg. Participants / Event"
-                }
+                title={isAdmin ? "Pending Reviews" : "Approved Events"}
                 value={
                   isAdmin
-                    ? registrations.filter((r) => r.status === "pending").length
-                    : averageParticipants
+                    ? adminOwnedRegistrations.filter(
+                        (r) => r.status === "pending"
+                      ).length
+                    : registrations.filter((r) => r.status === "approved")
+                        .length
                 }
                 change={isAdmin ? "-2%" : "0"}
-                isPositive={false}
+                isPositive={isStudent ? true : false}
                 icon={
                   isAdmin ? (
                     <AlertCircle className="w-5 h-5" />
                   ) : (
-                    <Users className="w-5 h-5" />
+                    <CheckCircle className="w-5 h-5" />
                   )
                 }
-                color="bg-orange-500"
+                color={isStudent ? "bg-green-500" : "bg-orange-500"}
               />
             </div>
           )}
@@ -1151,14 +1200,23 @@ export function Dashboard({
                   )}
                   {activeTab === "user management" && <UserActivityTable />}
                   {activeTab === "event management" && (
-                    <RecentEventsTable events={events} />
+                    <RecentEventsTable events={adminOwnedEvents} />
                   )}
                   {activeTab === "registrations" && (
-                    <RegistrationsTable registrations={registrations} />
+                    <RegistrationsTable
+                      registrations={
+                        isAdmin ? adminOwnedRegistrations : registrations
+                      }
+                    />
                   )}
                   {activeTab === "admin logs" && <AdminLogsTable />}
                   {activeTab === "my events" && (
-                    <RecentEventsTable events={events} />
+                    <RegistrationsTable
+                      registrations={
+                        isAdmin ? adminOwnedRegistrations : registrations
+                      }
+                      showAdminActions={isAdmin}
+                    />
                   )}
                   {activeTab !== "overview" &&
                     activeTab !== "user management" &&
@@ -1197,7 +1255,7 @@ export function Dashboard({
                           </button>
                         )}
                         <button
-                          onClick={() => setActiveTab("registrations")}
+                          onClick={() => setActiveTab("my events")}
                           className="w-full bg-gray-50 text-gray-700 py-2 px-4 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors border border-gray-200"
                         >
                           View All Registrations
