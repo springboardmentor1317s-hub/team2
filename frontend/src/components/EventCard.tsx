@@ -19,6 +19,7 @@ import otherbanner from "../public/banners/other.png";
 interface EventCardProps {
   event: Event;
   onClick: (event: Event) => void;
+  participantCount?: number;
 }
 
 // 🔑 Consistent thematic mapping (Same as EventForm)
@@ -30,7 +31,11 @@ const CATEGORY_IMAGES: Record<string, string> = {
   other: otherbanner,
 };
 
-const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => {
+const EventCard: React.FC<EventCardProps> = ({
+  event,
+  onClick,
+  participantCount,
+}) => {
   // Calculate the current status based on dates
   const currentStatus = getEventStatus(event.startDate, event.endDate);
 
@@ -135,9 +140,10 @@ const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => {
           <div className="flex items-center text-sm text-gray-600">
             <Users className="w-4 h-4 mr-2.5 text-indigo-500 flex-shrink-0" />
             <span className="font-medium text-gray-700">
-              {event.participantsCount} / {event.maxParticipants}
+              {participantCount ?? event.participantsCount ?? 0} /{" "}
+              {event.maxParticipants}
             </span>
-            <span className="ml-1 text-gray-400 text-xs">participants</span>
+            <span className="ml-1 text-gray-400 text-xs">registered</span>
           </div>
         </div>
 
