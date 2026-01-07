@@ -72,7 +72,7 @@ router.put('/:id/status', protect, isAdmin, async (req, res) => {
 router.get('/my', protect, async (req, res) => {
   try {
     const myRegs = await Registration.find({ student: req.user._id })
-      .populate('event', 'title startDate location imageUrl')
+      .populate('event', 'title startDate location imageUrl collegeName')
       .sort('-createdAt');
     res.json(myRegs);
   } catch (error) {
