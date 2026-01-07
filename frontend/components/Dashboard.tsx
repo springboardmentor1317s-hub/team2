@@ -215,6 +215,9 @@ export function Dashboard({
   const getEventName = (id: string) =>
     events.find((e) => (e._id || e.id) === id)?.title || "Unknown Event";
 
+  const getCollegeName = (id: string) =>
+    events.find((e) => (e._id || e.id) === id)?.collegeName || "N/A";
+
   const getUserName = (id: string) =>
     allUsers.find((u) => u.id === id)?.name || "Unknown User";
 
@@ -265,14 +268,6 @@ export function Dashboard({
       try {
         const token = localStorage.getItem("token");
 
-        if (!token) {
-      console.error("No token found. User not authenticated.");
-      setRegistrations([]);
-      setEvents([]);
-      setLoading(false);
-      return; // 🚨 STOP HERE
-    }
-
         // 1. Fetch Events (You already have this, but ensure it matches backend structure)
         const eventRes = await fetch("http://localhost:5000/api/events");
         const eventResult = await eventRes.json();
@@ -285,29 +280,10 @@ export function Dashboard({
           : "http://localhost:5000/api/registrations/my";
 
         const regRes = await fetch(regUrl, {
-  headers: { Authorization: `Bearer ${token}` },
-});
-
-if (!regRes.ok) {
-  console.error("Registration fetch failed:", regRes.status);
-  setRegistrations([]);
-  return;
-}
-
-const regData = await regRes.json();
-console.log("Registrations response:", regData);
-
-
-if (Array.isArray(regData)) {
-  setRegistrations(regData);
-} else if (Array.isArray(regData.data)) {
-  // if backend sends { success, data }
-  setRegistrations(regData.data);
-} else {
-  console.error("Registrations API did not return array:", regData);
-  setRegistrations([]); // 🔑 PREVENT CRASH
-}
-
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const regData = await regRes.json();
+        setRegistrations(regData);
       } catch (error) {
         console.error("Dashboard Fetch Error:", error);
       } finally {
@@ -326,15 +302,38 @@ if (Array.isArray(regData)) {
     events.length > 0 ? (totalParticipants / events.length).toFixed(1) : "0";
 
   // 🔑 FIX: Re-defining the missing variable
-  const dashboardRegistrations = Array.isArray(registrations)
-  ? isStudent
+  const dashboardRegistrations = isStudent
     ? registrations.filter(
         (r) =>
-          r.student?._id === user.id || r.userId === user.id
+          r.userId === MOCK_ALL_USERS.find((u) => u.name === user.fullName)?.id
       )
-    : registrations
-  : [];
+    : registrations;
 
+  // 🔑 NEW: Filter events for admin - show only events created by this admin
+  const adminOwnedEvents = isAdmin
+    ? events.filter((event) => {
+        // Compare adminId with user.id
+        // adminId could be a string or ObjectId, and could be stored as _id property
+        const eventAdminId = String(event.adminId || event.admin?._id || "");
+        const userId = String(user.id || "");
+        const isMatch = eventAdminId === userId;
+        return isMatch;
+      })
+    : events;
+
+  // 🔑 NEW: Filter registrations for admin - show only registrations for events they created
+  const adminOwnedRegistrations = isAdmin
+    ? registrations.filter((reg) => {
+        // Get the event ID from registration
+        const eventId = String(reg.eventId || reg.event?._id || "");
+        // Check if this event is in the admin's owned events
+        const isOwnedEvent = adminOwnedEvents.some((event) => {
+          const eid = String(event._id || event.id || "");
+          return eid === eventId;
+        });
+        return isOwnedEvent;
+      })
+    : registrations;
 
   // Create CSV content
   const handleExportData = () => {
@@ -395,6 +394,7 @@ if (Array.isArray(regData)) {
     "event management",
     "registrations",
     "admin logs",
+    "my events",
   ].includes(activeTab);
 
   // --- TABLE COMPONENTS (Updated to use MOCK data and props) ---
@@ -603,8 +603,10 @@ if (Array.isArray(regData)) {
 
   const RegistrationsTable = ({
     registrations: regList,
+    showAdminActions = true,
   }: {
     registrations: any[];
+    showAdminActions?: boolean;
   }) => (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
       <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
@@ -672,7 +674,7 @@ if (Array.isArray(regData)) {
                   </td>
 
                   <td className="px-6 py-4 text-right">
-                    {reg.status === "pending" ? (
+                    {showAdminActions && reg.status === "pending" ? (
                       <div className="flex justify-end gap-2">
                         <button
                           onClick={() =>
@@ -693,9 +695,19 @@ if (Array.isArray(regData)) {
                           <XIcon className="w-4 h-4" />
                         </button>
                       </div>
-                    ) : (
+                    ) : showAdminActions ? (
                       <div className="text-xs text-gray-400 italic">
-                        {reg.reviewedBy ? `By ${reg.reviewedBy}` : "Processed"}
+                        Processed
+                      </div>
+                    ) : reg.status === "pending" ? (
+                      <div className="text-xs text-yellow-600 font-medium italic">
+                        Waiting...
+                      </div>
+                    ) : (
+                      <div className="text-xs text-gray-600 font-medium">
+                        {getCollegeName(
+                          reg.eventId || reg.event?._id || reg.event?.id
+                        )}
                       </div>
                     )}
                   </td>
@@ -969,7 +981,7 @@ if (Array.isArray(regData)) {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             {/* Header/Greeting */}
             <div>
-              <h1 className="text-2xl font-bold text-white  inline-block px-4 py-2">
+              <h1 className="text-2xl font-bold inline-block px-4 py-2">
                 👋 {isAdmin ? "Admin Dashboard" : "My Dashboard"}
               </h1>
               <p className="text-gray-500 text-sm mt-1">
@@ -1045,27 +1057,31 @@ if (Array.isArray(regData)) {
                   isStudent
                     ? "Events Registered"
                     : isAdmin
-                    ? "My College Events"
+                    ? "Events Registered"
                     : "Total Events"
                 }
                 value={events.length}
+                //value={isStudent ? registrations.length : events.length}//
                 change="12%"
                 isPositive={true}
                 icon={<Calendar className="w-5 h-5" />}
                 color="bg-blue-500"
               />
               <StatCard
-                title={isAdmin ? "Total Active Users" : "Upcoming Events"}
+                title={isAdmin ? "My College Events" : "Upcoming Events"}
                 value={
                   isAdmin
-                    ? allUsers.length
-                    : events.filter((e) => e.status === "upcoming").length
+                    ? adminOwnedEvents.length
+                    : events.filter(
+                        (e) =>
+                          getEventStatus(e.startDate, e.endDate) === "upcoming"
+                      ).length
                 }
                 change="8%"
                 isPositive={true}
                 icon={
                   isAdmin ? (
-                    <Users className="w-5 h-5" />
+                    <Calendar className="w-5 h-5" />
                   ) : (
                     <Activity className="w-5 h-5" />
                   )
@@ -1075,7 +1091,9 @@ if (Array.isArray(regData)) {
               <StatCard
                 title={isStudent ? "Total Registrations" : "Total Participants"}
                 value={
-                  isStudent ? dashboardRegistrations.length : totalParticipants
+                  isStudent
+                    ? registrations.length
+                    : adminOwnedRegistrations.length
                 }
                 change="23%"
                 isPositive={true}
@@ -1083,27 +1101,25 @@ if (Array.isArray(regData)) {
                 color="bg-purple-500"
               />
               <StatCard
-                title={
-                  isAdmin ? "Pending Reviews" : "Avg. Participants / Event"
-                }
+                title={isAdmin ? "Pending Reviews" : "Approved Events"}
                 value={
                   isAdmin
-                    ? Array.isArray(registrations)
-  ? registrations.filter((r) => r.status === "pending").length
-  : 0
-
-                    : averageParticipants
+                    ? adminOwnedRegistrations.filter(
+                        (r) => r.status === "pending"
+                      ).length
+                    : registrations.filter((r) => r.status === "approved")
+                        .length
                 }
                 change={isAdmin ? "-2%" : "0"}
-                isPositive={false}
+                isPositive={isStudent ? true : false}
                 icon={
                   isAdmin ? (
                     <AlertCircle className="w-5 h-5" />
                   ) : (
-                    <Users className="w-5 h-5" />
+                    <CheckCircle className="w-5 h-5" />
                   )
                 }
-                color="bg-orange-500"
+                color={isStudent ? "bg-green-500" : "bg-orange-500"}
               />
             </div>
           )}
@@ -1184,14 +1200,23 @@ if (Array.isArray(regData)) {
                   )}
                   {activeTab === "user management" && <UserActivityTable />}
                   {activeTab === "event management" && (
-                    <RecentEventsTable events={events} />
+                    <RecentEventsTable events={adminOwnedEvents} />
                   )}
                   {activeTab === "registrations" && (
-                    <RegistrationsTable registrations={registrations} />
+                    <RegistrationsTable
+                      registrations={
+                        isAdmin ? adminOwnedRegistrations : registrations
+                      }
+                    />
                   )}
                   {activeTab === "admin logs" && <AdminLogsTable />}
                   {activeTab === "my events" && (
-                    <RecentEventsTable events={events} />
+                    <RegistrationsTable
+                      registrations={
+                        isAdmin ? adminOwnedRegistrations : registrations
+                      }
+                      showAdminActions={isAdmin}
+                    />
                   )}
                   {activeTab !== "overview" &&
                     activeTab !== "user management" &&
@@ -1216,7 +1241,6 @@ if (Array.isArray(regData)) {
               <div className="space-y-6">
                 {activeTab === "overview" ? (
                   <>
-                    {!isStudent && (
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                       <h3 className="font-semibold text-gray-900 mb-4">
                         Quick Actions
@@ -1231,7 +1255,7 @@ if (Array.isArray(regData)) {
                           </button>
                         )}
                         <button
-                          onClick={() => setActiveTab("registrations")}
+                          onClick={() => setActiveTab("my events")}
                           className="w-full bg-gray-50 text-gray-700 py-2 px-4 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors border border-gray-200"
                         >
                           View All Registrations
@@ -1245,7 +1269,6 @@ if (Array.isArray(regData)) {
                         </button>
                       </div>
                     </div>
-                    )}
 
                     {/* system full box  */}
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
