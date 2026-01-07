@@ -9,9 +9,7 @@ dotenv.config();
 
 const authRoutes = require("./routes/auth");
 const eventRoutes = require("./routes/events");
-const { authToken } = require("./middleware/auth");
 const connectDB = require("./config/db");
-const User = require("./models/User");
 
 const app = express();
 connectDB();
