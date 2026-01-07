@@ -105,7 +105,7 @@ router.post('/', protect, isAdmin, async (req, res) => {
             description,
             maxParticipants: maxParticipants || 100,
             collegeId,
-            adminId: req.user.id,
+            adminId: req.user._id, // Use _id from Mongoose document
             imageUrl: imageUrl || `https://picsum.photos/seed/${Math.random()}/800/400`,
             participantsCount: 0,
             status: 'upcoming',
@@ -133,6 +133,67 @@ router.post('/', protect, isAdmin, async (req, res) => {
             success: false,
             message: 'Error creating event'
         });
+    }
+});
+
+// @route   PUT /api/events/:id
+// @desc    Update an existing event (admin-owned)
+// @access  Private (Admin only)
+router.put('/:id', protect, isAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const event = await Event.findById(id);
+        if (!event) {
+            return res.status(404).json({ success: false, message: 'Event not found' });
+        }
+
+        // Ensure the authenticated admin owns this event
+        const ownsEvent = String(event.adminId) === String(req.user._id);
+        if (!ownsEvent) {
+            return res.status(403).json({ success: false, message: 'Not authorized to update this event' });
+        }
+
+        const updatableFields = [
+            'title', 'collegeName', 'category', 'location', 'startDate', 'endDate',
+            'description', 'maxParticipants', 'imageUrl', 'status', 'tags'
+        ];
+
+        updatableFields.forEach((field) => {
+            if (req.body[field] !== undefined) {
+                event[field] = req.body[field];
+            }
+        });
+
+        await event.save();
+        return res.status(200).json({ success: true, message: 'Event updated successfully', data: event });
+    } catch (error) {
+        console.error('Update Event Error:', error.message);
+        return res.status(500).json({ success: false, message: 'Error updating event' });
+    }
+});
+
+// @route   DELETE /api/events/:id
+// @desc    Delete an existing event (admin-owned)
+// @access  Private (Admin only)
+router.delete('/:id', protect, isAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const event = await Event.findById(id);
+        if (!event) {
+            return res.status(404).json({ success: false, message: 'Event not found' });
+        }
+
+        // Ensure the authenticated admin owns this event
+        const ownsEvent = String(event.adminId) === String(req.user._id);
+        if (!ownsEvent) {
+            return res.status(403).json({ success: false, message: 'Not authorized to delete this event' });
+        }
+
+        await Event.deleteOne({ _id: id });
+        return res.status(200).json({ success: true, message: 'Event deleted successfully' });
+    } catch (error) {
+        console.error('Delete Event Error:', error.message);
+        return res.status(500).json({ success: false, message: 'Error deleting event' });
     }
 });
 
