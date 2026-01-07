@@ -75,5 +75,41 @@ const NotificationSchema = new mongoose.Schema({
 // Index for better query performance
 NotificationSchema.index({ recipient: 1, createdAt: -1 });
 NotificationSchema.index({ recipient: 1, isRead: 1 });
+NotificationSchema.index({ type: 1 });
+NotificationSchema.index({ priority: 1 });
+
+// Instance method to mark as read
+NotificationSchema.methods.markAsRead = function() {
+    this.isRead = true;
+    this.readAt = new Date();
+    return this.save();
+};
+
+// Static method to get user's notifications with filters
+NotificationSchema.statics.getUserNotifications = function(userId, options = {}) {
+    const {
+        page = 1,
+        limit = 20,
+        isRead,
+        type,
+        priority
+    } = options;
+
+    const filter = { recipient: userId };
+    
+    if (isRead !== undefined) filter.isRead = isRead;
+    if (type) filter.type = type;
+    if (priority) filter.priority = priority;
+
+    const skip = (page - 1) * limit;
+
+    return this.find(filter)
+        .populate('sender', 'name email')
+        .populate('relatedEvent', 'title startDate')
+        .populate('relatedRegistration', 'status')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit);
+};
 
 module.exports = mongoose.model('Notification', NotificationSchema);

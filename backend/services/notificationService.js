@@ -14,6 +14,11 @@ class NotificationService {
         priority = 'medium'
     }) {
         try {
+            // Input validation
+            if (!recipient || !type || !title || !message) {
+                throw new Error('Missing required fields: recipient, type, title, message');
+            }
+
             const notification = new Notification({
                 recipient,
                 sender,
@@ -75,6 +80,11 @@ class NotificationService {
 
     // Event created notification (broadcast to all students)
     static async notifyEventCreated(event, studentIds) {
+        if (!studentIds || studentIds.length === 0) {
+            console.log('No students to notify for event creation');
+            return;
+        }
+
         const notifications = studentIds.map(studentId => ({
             recipient: studentId,
             sender: event.adminId,
@@ -96,6 +106,11 @@ class NotificationService {
 
     // Event updated notification
     static async notifyEventUpdated(event, registeredStudentIds) {
+        if (!registeredStudentIds || registeredStudentIds.length === 0) {
+            console.log('No registered students to notify for event update');
+            return;
+        }
+
         const notifications = registeredStudentIds.map(studentId => ({
             recipient: studentId,
             sender: event.adminId,
@@ -117,6 +132,11 @@ class NotificationService {
 
     // Event cancelled notification
     static async notifyEventCancelled(event, registeredStudentIds) {
+        if (!registeredStudentIds || registeredStudentIds.length === 0) {
+            console.log('No registered students to notify for event cancellation');
+            return;
+        }
+
         const notifications = registeredStudentIds.map(studentId => ({
             recipient: studentId,
             sender: event.adminId,
@@ -138,6 +158,11 @@ class NotificationService {
 
     // System announcement (broadcast to all users)
     static async notifySystemAnnouncement(title, message, userIds, priority = 'medium') {
+        if (!userIds || userIds.length === 0) {
+            console.log('No users to notify for system announcement');
+            return;
+        }
+
         const notifications = userIds.map(userId => ({
             recipient: userId,
             type: 'system_announcement',
@@ -151,6 +176,53 @@ class NotificationService {
             console.log(`System announcement sent to ${userIds.length} users`);
         } catch (error) {
             console.error('Error sending system announcement:', error);
+            throw error;
+        }
+    }
+
+    // Utility: Get user's unread notification count
+    static async getUnreadCount(userId) {
+        try {
+            return await Notification.countDocuments({
+                recipient: userId,
+                isRead: false
+            });
+        } catch (error) {
+            console.error('Error getting unread count:', error);
+            throw error;
+        }
+    }
+
+    // Utility: Mark notification as read
+    static async markAsRead(notificationId, userId) {
+        try {
+            const notification = await Notification.findOneAndUpdate(
+                { _id: notificationId, recipient: userId, isRead: false },
+                { isRead: true, readAt: new Date() },
+                { new: true }
+            );
+            return notification;
+        } catch (error) {
+            console.error('Error marking notification as read:', error);
+            throw error;
+        }
+    }
+
+    // Utility: Clean up old notifications (older than 30 days)
+    static async cleanupOldNotifications(daysOld = 30) {
+        try {
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - daysOld);
+            
+            const result = await Notification.deleteMany({
+                createdAt: { $lt: cutoffDate },
+                isRead: true
+            });
+            
+            console.log(`Cleaned up ${result.deletedCount} old notifications`);
+            return result.deletedCount;
+        } catch (error) {
+            console.error('Error cleaning up old notifications:', error);
             throw error;
         }
     }
