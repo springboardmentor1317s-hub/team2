@@ -172,26 +172,86 @@ const StatCard: React.FC<any> = ({
   isPositive,
   icon,
   color,
-}) => (
-  <div className="dashboard-card rounded-xl p-6 shadow-sm flex items-start justify-between">
-    <div>
-      <p className="text-sm font-medium dashboard-card-text mb-1">{title}</p>
-      <h3 className="text-2xl font-bold dashboard-card-header">{value}</h3>
-      {change && (
-        <p
-          className={`text-xs mt-2 font-medium ${
-            isPositive ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
-          }`}
+}) => {
+  const { theme } = useTheme();
+  
+  return (
+    <div 
+      className="rounded-xl p-6 flex items-start justify-between transition-all duration-300 hover:scale-105 cursor-pointer group"
+      style={{
+        background: theme === 'dark' 
+          ? 'linear-gradient(145deg, rgba(31, 41, 55, 0.8) 0%, rgba(17, 24, 39, 0.9) 100%)' 
+          : 'linear-gradient(145deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.8) 100%)',
+        boxShadow: theme === 'dark' 
+          ? '0 10px 25px rgba(0, 0, 0, 0.3), 0 4px 10px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)' 
+          : '0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1)',
+        border: `1px solid ${theme === 'dark' ? 'rgba(55, 65, 81, 0.5)' : 'rgba(229, 231, 235, 0.5)'}`,
+        backdropFilter: 'blur(10px)'
+      }}
+      onMouseEnter={(e) => {
+        if (theme === 'dark') {
+          e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.4), 0 8px 16px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15)';
+        } else {
+          e.currentTarget.style.boxShadow = '0 10px 25px rgba(0, 0, 0, 0.1), 0 4px 10px rgba(0, 0, 0, 0.05)';
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (theme === 'dark') {
+          e.currentTarget.style.boxShadow = '0 10px 25px rgba(0, 0, 0, 0.3), 0 4px 10px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
+        } else {
+          e.currentTarget.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1)';
+        }
+      }}
+    >
+      <div>
+        <p 
+          className="text-sm font-medium mb-1"
+          style={{
+            color: theme === 'dark' ? '#9ca3af' : '#6b7280'
+          }}
         >
-          {isPositive ? "+" : ""}
-          {change}{" "}
-          <span className="dashboard-card-text-secondary font-normal">vs last month</span>
+          {title}
         </p>
-      )}
+        <h3 
+          className="text-2xl font-bold"
+          style={{
+            color: theme === 'dark' ? '#ffffff' : '#111827'
+          }}
+        >
+          {value}
+        </h3>
+        {change && (
+          <p
+            className={`text-xs mt-2 font-medium ${
+              isPositive ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
+            }`}
+          >
+            {isPositive ? "+" : ""}
+            {change}{" "}
+            <span 
+              className="font-normal"
+              style={{
+                color: theme === 'dark' ? '#6b7280' : '#9ca3af'
+              }}
+            >
+              vs last month
+            </span>
+          </p>
+        )}
+      </div>
+      <div 
+        className={`p-3 rounded-lg text-white transition-all duration-300 group-hover:scale-110 ${color}`}
+        style={{
+          boxShadow: theme === 'dark' 
+            ? '0 4px 8px rgba(0, 0, 0, 0.3)' 
+            : '0 2px 4px rgba(0, 0, 0, 0.1)'
+        }}
+      >
+        {icon}
+      </div>
     </div>
-    <div className={`p-3 rounded-lg ${color} text-white`}>{icon}</div>
-  </div>
-);
+  );
+};
 
 export function Dashboard({
   user,
@@ -1088,9 +1148,25 @@ export function Dashboard({
           </div>
         </aside>
         {/* 2. Main Content Area */}
-        <main className={`main-content flex-1 min-h-screen overflow-y-auto bg-gray-50 dark:bg-gray-900 ${isCollapsed ? "ml-20" : "ml-64"} transition-all duration-300`}>
-          <div className="p-8 min-h-full">
-            <div className="space-y-6">
+        <main 
+          className={`main-content flex-1 min-h-screen overflow-y-auto ${isCollapsed ? "ml-20" : "ml-64"} transition-all duration-300`}
+          style={{
+            background: theme === 'dark' 
+              ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #111827 100%)' 
+              : 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%)'
+          }}
+        >
+          <div className="p-8 min-h-full relative">
+            {/* Background gradient overlay */}
+            <div 
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background: theme === 'dark' 
+                  ? 'radial-gradient(ellipse at top right, rgba(79, 70, 229, 0.15) 0%, transparent 50%)' 
+                  : 'radial-gradient(ellipse at top right, rgba(79, 70, 229, 0.08) 0%, transparent 50%)'
+              }}
+            />
+            <div className="space-y-6 relative z-10">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 {/* Header/Greeting */}
                 <div>
@@ -1108,7 +1184,25 @@ export function Dashboard({
                   {isAdmin && (
                     <button
                       onClick={onCreateEventClick}
-                      className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm text-sm font-medium"
+                      className="flex items-center gap-2 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-105"
+                      style={{
+                        background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+                        boxShadow: theme === 'dark' 
+                          ? '0 4px 8px rgba(79, 70, 229, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2)' 
+                          : '0 2px 4px rgba(79, 70, 229, 0.2), 0 1px 2px rgba(0, 0, 0, 0.1)'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'linear-gradient(135deg, #4338ca 0%, #6d28d9 100%)';
+                        e.currentTarget.style.boxShadow = theme === 'dark' 
+                          ? '0 8px 16px rgba(79, 70, 229, 0.4), 0 4px 8px rgba(0, 0, 0, 0.3)' 
+                          : '0 4px 8px rgba(79, 70, 229, 0.3), 0 2px 4px rgba(0, 0, 0, 0.15)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)';
+                        e.currentTarget.style.boxShadow = theme === 'dark' 
+                          ? '0 4px 8px rgba(79, 70, 229, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2)' 
+                          : '0 2px 4px rgba(79, 70, 229, 0.2), 0 1px 2px rgba(0, 0, 0, 0.1)';
+                      }}
                     >
                       <Plus className="w-4 h-4" />
                       Create New Event
@@ -1116,10 +1210,36 @@ export function Dashboard({
                   )}
                   {isAdmin && (
                     <>
-                      <button className="flex items-center gap-2 dashboard-button-secondary px-4 py-2 rounded-lg transition-colors shadow-sm text-sm font-medium">
+                      <button 
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-105"
+                        style={{
+                          background: theme === 'dark' 
+                            ? 'linear-gradient(135deg, rgba(55, 65, 81, 0.8) 0%, rgba(75, 85, 99, 0.6) 100%)' 
+                            : 'linear-gradient(135deg, rgba(249, 250, 251, 0.9) 0%, rgba(243, 244, 246, 0.7) 100%)',
+                          color: theme === 'dark' ? '#d1d5db' : '#374151',
+                          boxShadow: theme === 'dark' 
+                            ? '0 2px 4px rgba(0, 0, 0, 0.2)' 
+                            : '0 1px 3px rgba(0, 0, 0, 0.1)',
+                          border: `1px solid ${theme === 'dark' ? 'rgba(75, 85, 99, 0.5)' : 'rgba(209, 213, 219, 0.5)'}`
+                        }}
+                      >
                         <Filter className="w-4 h-4" /> Filter
                       </button>
-                      <button className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm text-sm font-medium">
+                      <button 
+                        className="flex items-center gap-2 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-105"
+                        style={{
+                          background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                          boxShadow: theme === 'dark' 
+                            ? '0 4px 8px rgba(5, 150, 105, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2)' 
+                            : '0 2px 4px rgba(5, 150, 105, 0.2), 0 1px 2px rgba(0, 0, 0, 0.1)'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'linear-gradient(135deg, #047857 0%, #065f46 100%)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'linear-gradient(135deg, #059669 0%, #047857 100%)';
+                        }}
+                      >
                         <Shield className="w-4 h-4" /> Security
                       </button>
                     </>
@@ -1260,8 +1380,25 @@ export function Dashboard({
                     {activeTab === "overview" && (
                       <>
                         {isAdmin && (
-                          <div className="dashboard-card p-6 rounded-xl shadow-sm">
-                            <h3 className="font-semibold dashboard-card-header mb-4">
+                          <div 
+                            className="rounded-xl p-6 transition-all duration-300 hover:scale-[1.02]"
+                            style={{
+                              background: theme === 'dark' 
+                                ? 'linear-gradient(145deg, rgba(31, 41, 55, 0.8) 0%, rgba(17, 24, 39, 0.9) 100%)' 
+                                : 'linear-gradient(145deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.8) 100%)',
+                              boxShadow: theme === 'dark' 
+                                ? '0 10px 25px rgba(0, 0, 0, 0.3), 0 4px 10px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)' 
+                                : '0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1)',
+                              border: `1px solid ${theme === 'dark' ? 'rgba(55, 65, 81, 0.5)' : 'rgba(229, 231, 235, 0.5)'}`,
+                              backdropFilter: 'blur(10px)'
+                            }}
+                          >
+                            <h3 
+                              className="font-semibold mb-4"
+                              style={{
+                                color: theme === 'dark' ? '#ffffff' : '#111827'
+                              }}
+                            >
                               Registration Trends
                             </h3>
                             <div className="h-64 w-full">
@@ -1340,12 +1477,35 @@ export function Dashboard({
                       activeTab !== "registrations" &&
                       activeTab !== "admin logs" &&
                       activeTab !== "my events" && (
-                        <div className="dashboard-card p-12 rounded-xl shadow-sm text-center dashboard-card-text">
+                        <div 
+                          className="p-12 rounded-xl text-center transition-all duration-300 hover:scale-[1.02]"
+                          style={{
+                            background: theme === 'dark' 
+                              ? 'linear-gradient(145deg, rgba(31, 41, 55, 0.8) 0%, rgba(17, 24, 39, 0.9) 100%)' 
+                              : 'linear-gradient(145deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.8) 100%)',
+                            boxShadow: theme === 'dark' 
+                              ? '0 10px 25px rgba(0, 0, 0, 0.3), 0 4px 10px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)' 
+                              : '0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1)',
+                            border: `1px solid ${theme === 'dark' ? 'rgba(55, 65, 81, 0.5)' : 'rgba(229, 231, 235, 0.5)'}`,
+                            backdropFilter: 'blur(10px)'
+                          }}
+                        >
                           <FileText className="w-12 h-12 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
-                          <h3 className="text-lg font-medium dashboard-card-header">
+                          <h3 
+                            className="text-lg font-medium"
+                            style={{
+                              color: theme === 'dark' ? '#ffffff' : '#111827'
+                            }}
+                          >
                             No content available
                           </h3>
-                          <p>This section is under development.</p>
+                          <p 
+                            style={{
+                              color: theme === 'dark' ? '#9ca3af' : '#6b7280'
+                            }}
+                          >
+                            This section is under development.
+                          </p>
                         </div>
                       )}
                   </>
@@ -1357,8 +1517,25 @@ export function Dashboard({
                 <div className="space-y-6">
                   {activeTab === "overview" ? (
                     <>
-                      <div className="dashboard-card rounded-xl shadow-sm p-6">
-                        <h3 className="font-semibold dashboard-card-header mb-4">
+                      <div 
+                        className="rounded-xl p-6 transition-all duration-300 hover:scale-[1.02]"
+                        style={{
+                          background: theme === 'dark' 
+                            ? 'linear-gradient(145deg, rgba(31, 41, 55, 0.8) 0%, rgba(17, 24, 39, 0.9) 100%)' 
+                            : 'linear-gradient(145deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.8) 100%)',
+                          boxShadow: theme === 'dark' 
+                            ? '0 10px 25px rgba(0, 0, 0, 0.3), 0 4px 10px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)' 
+                            : '0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1)',
+                          border: `1px solid ${theme === 'dark' ? 'rgba(55, 65, 81, 0.5)' : 'rgba(229, 231, 235, 0.5)'}`,
+                          backdropFilter: 'blur(10px)'
+                        }}
+                      >
+                        <h3 
+                          className="font-semibold mb-4"
+                          style={{
+                            color: theme === 'dark' ? '#ffffff' : '#111827'
+                          }}
+                        >
                           Quick Actions
                         </h3>
                         <div className="space-y-3">
@@ -1387,8 +1564,25 @@ export function Dashboard({
                       </div>
 
                       {/* system full box  */}
-                      <div className="dashboard-card rounded-xl shadow-sm p-6">
-                        <h3 className="font-semibold dashboard-card-header mb-4">
+                      <div 
+                        className="rounded-xl p-6 transition-all duration-300 hover:scale-[1.02]"
+                        style={{
+                          background: theme === 'dark' 
+                            ? 'linear-gradient(145deg, rgba(31, 41, 55, 0.8) 0%, rgba(17, 24, 39, 0.9) 100%)' 
+                            : 'linear-gradient(145deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.8) 100%)',
+                          boxShadow: theme === 'dark' 
+                            ? '0 10px 25px rgba(0, 0, 0, 0.3), 0 4px 10px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)' 
+                            : '0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1)',
+                          border: `1px solid ${theme === 'dark' ? 'rgba(55, 65, 81, 0.5)' : 'rgba(229, 231, 235, 0.5)'}`,
+                          backdropFilter: 'blur(10px)'
+                        }}
+                      >
+                        <h3 
+                          className="font-semibold mb-4"
+                          style={{
+                            color: theme === 'dark' ? '#ffffff' : '#111827'
+                          }}
+                        >
                           System Health
                         </h3>
                         <div className="space-y-4">
@@ -1420,11 +1614,33 @@ export function Dashboard({
                       </div>
                     </>
                   ) : (
-                    <div className="dashboard-card rounded-xl shadow-sm p-6">
-                      <h3 className="font-semibold dashboard-card-header mb-4">
+                    <div 
+                      className="rounded-xl p-6 transition-all duration-300 hover:scale-[1.02]"
+                      style={{
+                        background: theme === 'dark' 
+                          ? 'linear-gradient(145deg, rgba(31, 41, 55, 0.8) 0%, rgba(17, 24, 39, 0.9) 100%)' 
+                          : 'linear-gradient(145deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.8) 100%)',
+                        boxShadow: theme === 'dark' 
+                          ? '0 10px 25px rgba(0, 0, 0, 0.3), 0 4px 10px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)' 
+                          : '0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1)',
+                        border: `1px solid ${theme === 'dark' ? 'rgba(55, 65, 81, 0.5)' : 'rgba(229, 231, 235, 0.5)'}`,
+                        backdropFilter: 'blur(10px)'
+                      }}
+                    >
+                      <h3 
+                        className="font-semibold mb-4"
+                        style={{
+                          color: theme === 'dark' ? '#ffffff' : '#111827'
+                        }}
+                      >
                         Information
                       </h3>
-                      <p className="text-sm dashboard-card-text mb-4">
+                      <p 
+                        className="text-sm mb-4"
+                        style={{
+                          color: theme === 'dark' ? '#9ca3af' : '#6b7280'
+                        }}
+                      >
                         Select an item from the main list to view more details
                         here.
                       </p>

@@ -72,10 +72,30 @@ const EventCard: React.FC<EventCardProps> = ({
 
   return (
     <div
-      className="event-card rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition-shadow cursor-pointer flex flex-col h-full"
+      className="event-card rounded-xl overflow-hidden cursor-pointer flex flex-col h-full transition-all duration-300 hover:scale-105"
       style={{
-        backgroundColor: theme === 'dark' ? '#1f2937' : '#ffffff',
-        borderColor: theme === 'dark' ? '#374151' : '#e5e7eb'
+        background: theme === 'dark' 
+          ? 'linear-gradient(145deg, #1f2937 0%, #111827 100%)' 
+          : 'linear-gradient(145deg, #ffffff 0%, #f9fafb 100%)',
+        borderColor: theme === 'dark' ? '#374151' : '#e5e7eb',
+        boxShadow: theme === 'dark' 
+          ? '0 10px 25px rgba(0, 0, 0, 0.3), 0 4px 10px rgba(0, 0, 0, 0.2)' 
+          : '0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1)',
+        border: `1px solid ${theme === 'dark' ? '#374151' : '#e5e7eb'}`
+      }}
+      onMouseEnter={(e) => {
+        if (theme === 'dark') {
+          e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.4), 0 8px 16px rgba(0, 0, 0, 0.3)';
+        } else {
+          e.currentTarget.style.boxShadow = '0 10px 25px rgba(0, 0, 0, 0.1), 0 4px 10px rgba(0, 0, 0, 0.05)';
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (theme === 'dark') {
+          e.currentTarget.style.boxShadow = '0 10px 25px rgba(0, 0, 0, 0.3), 0 4px 10px rgba(0, 0, 0, 0.2)';
+        } else {
+          e.currentTarget.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1)';
+        }
       }}
       onClick={() => onClick(event)}
     >
@@ -236,14 +256,25 @@ const EventCard: React.FC<EventCardProps> = ({
           {event.tags?.slice(0, 3).map((tag) => (
             <span
               key={tag}
-              className="tag-style inline-flex items-center px-2 py-1 rounded text-[10px] border"
+              className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 hover:scale-105"
               style={{
-                backgroundColor: theme === 'dark' ? '#4b5563' : '#f3f4f6',
-                color: theme === 'dark' ? '#e5e7eb' : '#374151',
-                borderColor: theme === 'dark' ? '#6b7280' : '#d1d5db'
+                background: theme === 'dark' 
+                  ? 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)' 
+                  : 'linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%)',
+                color: theme === 'dark' ? '#ffffff' : '#4338ca',
+                boxShadow: theme === 'dark' 
+                  ? '0 2px 8px rgba(79, 70, 229, 0.3)' 
+                  : '0 1px 3px rgba(67, 56, 202, 0.2)',
+                border: `1px solid ${theme === 'dark' ? '#6366f1' : '#a5b4fc'}`
               }}
             >
-              <Tag className="w-3 h-3 mr-1" /> {tag}
+              <Tag 
+                className="w-3 h-3 mr-1" 
+                style={{
+                  color: theme === 'dark' ? '#c7d2fe' : '#6366f1'
+                }}
+              /> 
+              {tag}
             </span>
           ))}
         </div>

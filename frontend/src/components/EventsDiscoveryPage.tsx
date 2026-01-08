@@ -177,18 +177,32 @@ export const EventsDiscoveryPage: React.FC<EventsDiscoveryPageProps> = ({
       <div 
         className="min-h-screen flex flex-col items-center justify-center"
         style={{
-          backgroundColor: theme === 'dark' ? '#111827' : '#f9fafb'
+          background: theme === 'dark' 
+            ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #111827 100%)' 
+            : 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%)'
         }}
       >
-        <Loader2 className="w-12 h-12 text-indigo-500 animate-spin mb-4" />
-        <p 
-          className="font-medium"
+        <div 
+          className="p-8 rounded-2xl backdrop-blur-sm"
           style={{
-            color: theme === 'dark' ? '#9ca3af' : '#6b7280'
+            background: theme === 'dark' 
+              ? 'linear-gradient(145deg, rgba(31, 41, 55, 0.6) 0%, rgba(17, 24, 39, 0.8) 100%)' 
+              : 'linear-gradient(145deg, rgba(255, 255, 255, 0.8) 0%, rgba(248, 250, 252, 0.6) 100%)',
+            boxShadow: theme === 'dark' 
+              ? '0 20px 40px rgba(0, 0, 0, 0.3)' 
+              : '0 10px 25px rgba(0, 0, 0, 0.1)'
           }}
         >
-          Fetching latest events...
-        </p>
+          <Loader2 className="w-12 h-12 text-indigo-500 animate-spin mb-4 mx-auto" />
+          <p 
+            className="font-medium text-center"
+            style={{
+              color: theme === 'dark' ? '#d1d5db' : '#6b7280'
+            }}
+          >
+            Fetching latest events...
+          </p>
+        </div>
       </div>
     );
   }
@@ -197,15 +211,23 @@ export const EventsDiscoveryPage: React.FC<EventsDiscoveryPageProps> = ({
     <div 
       className="discovery-page p-4 sm:p-8 min-h-screen"
       style={{
-        backgroundColor: theme === 'dark' ? '#111827' : '#f9fafb'
+        background: theme === 'dark' 
+          ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #111827 100%)' 
+          : 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%)'
       }}
       data-theme={theme}
     >
       <div 
-        className="max-w-7xl mx-auto rounded-2xl p-6 sm:p-8 shadow-lg border"
+        className="max-w-7xl mx-auto rounded-2xl p-6 sm:p-8 border backdrop-blur-sm"
         style={{
-          backgroundColor: theme === 'dark' ? '#1f2937' : '#ffffff',
-          borderColor: theme === 'dark' ? '#374151' : '#e5e7eb'
+          background: theme === 'dark' 
+            ? 'linear-gradient(145deg, rgba(31, 41, 55, 0.8) 0%, rgba(17, 24, 39, 0.9) 100%)' 
+            : 'linear-gradient(145deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.8) 100%)',
+          borderColor: theme === 'dark' ? '#374151' : '#e2e8f0',
+          boxShadow: theme === 'dark' 
+            ? '0 25px 50px rgba(0, 0, 0, 0.4), 0 10px 20px rgba(0, 0, 0, 0.3)' 
+            : '0 20px 25px rgba(0, 0, 0, 0.1), 0 8px 10px rgba(0, 0, 0, 0.04)',
+          backdropFilter: 'blur(10px)'
         }}
         data-theme={theme}
       >
@@ -228,10 +250,15 @@ export const EventsDiscoveryPage: React.FC<EventsDiscoveryPageProps> = ({
 
         {/* --- Search and Filter Bar --- */}
         <div 
-          className="flex flex-col gap-4 mb-8 p-4 rounded-xl border"
+          className="flex flex-col gap-4 mb-8 p-4 rounded-xl border backdrop-blur-sm"
           style={{
-            backgroundColor: theme === 'dark' ? '#374151' : '#f9fafb',
-            borderColor: theme === 'dark' ? '#4b5563' : '#e5e7eb'
+            background: theme === 'dark' 
+              ? 'linear-gradient(135deg, rgba(55, 65, 81, 0.6) 0%, rgba(75, 85, 99, 0.4) 100%)' 
+              : 'linear-gradient(135deg, rgba(249, 250, 251, 0.8) 0%, rgba(243, 244, 246, 0.6) 100%)',
+            borderColor: theme === 'dark' ? '#4b5563' : '#e2e8f0',
+            boxShadow: theme === 'dark' 
+              ? '0 8px 16px rgba(0, 0, 0, 0.2)' 
+              : '0 4px 6px rgba(0, 0, 0, 0.05)'
           }}
         >
           <div className="flex flex-wrap gap-4 items-center w-full">
@@ -346,23 +373,28 @@ export const EventsDiscoveryPage: React.FC<EventsDiscoveryPageProps> = ({
           </div>
         ) : (
           <div 
-            className="text-center p-12 rounded-xl border-2 border-dashed"
+            className="text-center p-12 rounded-xl border-2 border-dashed backdrop-blur-sm"
             style={{
-              backgroundColor: theme === 'dark' ? '#374151' : '#f9fafb',
-              borderColor: theme === 'dark' ? '#4b5563' : '#e5e7eb'
+              background: theme === 'dark' 
+                ? 'linear-gradient(135deg, rgba(55, 65, 81, 0.4) 0%, rgba(75, 85, 99, 0.2) 100%)' 
+                : 'linear-gradient(135deg, rgba(249, 250, 251, 0.6) 0%, rgba(243, 244, 246, 0.4) 100%)',
+              borderColor: theme === 'dark' ? '#4b5563' : '#d1d5db',
+              boxShadow: theme === 'dark' 
+                ? '0 8px 16px rgba(0, 0, 0, 0.2)' 
+                : '0 4px 6px rgba(0, 0, 0, 0.05)'
             }}
           >
             <h3 
               className="text-xl font-semibold"
               style={{
-                color: theme === 'dark' ? '#9ca3af' : '#6b7280'
+                color: theme === 'dark' ? '#d1d5db' : '#6b7280'
               }}
             >
               No Events Found Matching Your Criteria
             </h3>
             <button
               onClick={clearFilters}
-              className="mt-4 font-medium hover:underline"
+              className="mt-4 font-medium hover:underline transition-colors duration-200"
               style={{
                 color: theme === 'dark' ? '#818cf8' : '#4f46e5'
               }}
