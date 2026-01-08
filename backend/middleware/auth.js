@@ -5,7 +5,9 @@ const authToken = async (req, res, next) => {
   // Get token from header
   const token = req.header("x-auth-token") || req.header("authorization");
   if (!token) {
-    return res.status(401).json({ msg: "No token, authorization denied" });
+    return res
+      .status(401)
+      .json({ msg: "Access denied. Authentication token is missing" });
   }
 
   try {
@@ -14,22 +16,27 @@ const authToken = async (req, res, next) => {
     const decoded = jwt.verify(raw, process.env.JWT_SECRET);
     // Fetch user and attach minimal safe fields
     const user = await User.findById(decoded.id).select("-password");
-    if (!user) return res.status(401).json({ msg: "User not found" });
+    if (!user)
+      return res
+        .status(401)
+        .json({ msg: "Authentication failed. User does not exist!" });
 
     req.user = user; // mongoose doc (without password)
     next();
   } catch (err) {
     console.error("Auth middleware error:", err.message);
-    res.status(401).json({ msg: "Token is not valid" });
+    res
+      .status(401)
+      .json({ msg: "Authentication failed. Invalid or expired token" });
   }
 };
 
 const verifyAdmin = (req, res, next) => {
   if (!req.user) {
-    return res.status(401).json({ msg: "Not authorized" });
+    return res.status(401).json({ msg: "Access denied. Please login again" });
   }
   if (req.user.role !== "admin") {
-    return res.status(403).json({ msg: "Admin access required" });
+    return res.status(403).json({ msg: "Forbidden. Admin access required" });
   }
   next();
 };
