@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { formatDate } from "../utils/formatters";
 import { getEventStatus } from "../utils/eventStatus";
+import { useTheme } from "../context/ThemeContext";
 import sportsBanner from "../public/banners/sports.png";
 import hackathonBanner from "../public/banners/hackathon.png";
 import workshopBanner from "../public/banners/workshop.png";
@@ -36,6 +37,8 @@ const EventCard: React.FC<EventCardProps> = ({
   onClick,
   participantCount,
 }) => {
+  const { theme } = useTheme();
+  
   // Calculate the current status based on dates
   const currentStatus = getEventStatus(event.startDate, event.endDate);
 
@@ -69,11 +72,20 @@ const EventCard: React.FC<EventCardProps> = ({
 
   return (
     <div
-      className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow cursor-pointer flex flex-col h-full"
+      className="event-card rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition-shadow cursor-pointer flex flex-col h-full"
+      style={{
+        backgroundColor: theme === 'dark' ? '#1f2937' : '#ffffff',
+        borderColor: theme === 'dark' ? '#374151' : '#e5e7eb'
+      }}
       onClick={() => onClick(event)}
     >
       {/* 🖼️ DYNAMIC IMAGE SECTION */}
-      <div className="relative h-52 w-full overflow-hidden bg-gray-100">
+      <div 
+        className="relative h-52 w-full overflow-hidden"
+        style={{
+          backgroundColor: theme === 'dark' ? '#374151' : '#f3f4f6'
+        }}
+      >
         <img
           src={
             event.imageUrl ||
@@ -104,28 +116,68 @@ const EventCard: React.FC<EventCardProps> = ({
       </div>
 
       <div className="p-5 flex-1 flex flex-col">
-        <h3 className="text-xl font-bold text-gray-900 mb-1 line-clamp-1">
+        <h3 
+          className="text-xl font-bold mb-1 line-clamp-1"
+          style={{
+            color: theme === 'dark' ? '#ffffff' : '#111827'
+          }}
+        >
           {event.title}
         </h3>
 
-        <div className="flex items-center text-sm font-medium text-indigo-600 mb-3">
-          <GraduationCap className="w-4 h-4 mr-1.5 flex-shrink-0" />
+        <div 
+          className="flex items-center text-sm font-medium mb-3"
+          style={{
+            color: theme === 'dark' ? '#818cf8' : '#4f46e5'
+          }}
+        >
+          <GraduationCap className="w-4 h-4 mr-1.5 shrink-0" />
           <span className="line-clamp-1">
             {event.collegeName || "Campus Event"}
           </span>
         </div>
 
-        <p className="text-gray-500 text-sm mb-4 line-clamp-2 flex-1">
+        <p 
+          className="text-sm mb-4 line-clamp-2 flex-1"
+          style={{
+            color: theme === 'dark' ? '#9ca3af' : '#6b7280'
+          }}
+        >
           {event.description}
         </p>
 
-        <div className="space-y-2.5 mt-auto mb-4 border-t border-gray-50 pt-4">
-          <div className="flex items-center text-sm text-gray-600">
-            <Calendar className="w-4 h-4 mr-2.5 text-indigo-500 flex-shrink-0" />
+        <div 
+          className="space-y-2.5 mt-auto mb-4 border-t pt-4"
+          style={{
+            borderColor: theme === 'dark' ? '#374151' : '#f9fafb'
+          }}
+        >
+          <div 
+            className="flex items-center text-sm"
+            style={{
+              color: theme === 'dark' ? '#d1d5db' : '#6b7280'
+            }}
+          >
+            <Calendar 
+              className="w-4 h-4 mr-2.5 shrink-0"
+              style={{
+                color: theme === 'dark' ? '#818cf8' : '#4f46e5'
+              }}
+            />
             <span>{formatDate(event.startDate)}</span>
           </div>
-          <div className="flex items-center text-sm text-gray-600">
-            <Clock className="w-4 h-4 mr-2.5 text-indigo-500 flex-shrink-0" />
+          <div 
+            className="flex items-center text-sm"
+            style={{
+              color: theme === 'dark' ? '#d1d5db' : '#6b7280'
+            }}
+          >
+            <Clock 
+              className="w-4 h-4 mr-2.5 shrink-0"
+              style={{
+                color: theme === 'dark' ? '#818cf8' : '#4f46e5'
+              }}
+            />
             <span>
               {new Date(event.startDate).toLocaleTimeString([], {
                 hour: "2-digit",
@@ -133,17 +185,49 @@ const EventCard: React.FC<EventCardProps> = ({
               })}
             </span>
           </div>
-          <div className="flex items-center text-sm text-gray-600">
-            <MapPin className="w-4 h-4 mr-2.5 text-indigo-500 flex-shrink-0" />
+          <div 
+            className="flex items-center text-sm"
+            style={{
+              color: theme === 'dark' ? '#d1d5db' : '#6b7280'
+            }}
+          >
+            <MapPin 
+              className="w-4 h-4 mr-2.5 shrink-0"
+              style={{
+                color: theme === 'dark' ? '#818cf8' : '#4f46e5'
+              }}
+            />
             <span className="line-clamp-1">{event.location}</span>
           </div>
-          <div className="flex items-center text-sm text-gray-600">
-            <Users className="w-4 h-4 mr-2.5 text-indigo-500 flex-shrink-0" />
-            <span className="font-medium text-gray-700">
+          <div 
+            className="flex items-center text-sm"
+            style={{
+              color: theme === 'dark' ? '#d1d5db' : '#6b7280'
+            }}
+          >
+            <Users 
+              className="w-4 h-4 mr-2.5 shrink-0"
+              style={{
+                color: theme === 'dark' ? '#818cf8' : '#4f46e5'
+              }}
+            />
+            <span 
+              className="font-medium"
+              style={{
+                color: theme === 'dark' ? '#e5e7eb' : '#374151'
+              }}
+            >
               {participantCount ?? event.participantsCount ?? 0} /{" "}
               {event.maxParticipants}
             </span>
-            <span className="ml-1 text-gray-400 text-xs">registered</span>
+            <span 
+              className="ml-1 text-xs"
+              style={{
+                color: theme === 'dark' ? '#6b7280' : '#9ca3af'
+              }}
+            >
+              registered
+            </span>
           </div>
         </div>
 
@@ -152,17 +236,33 @@ const EventCard: React.FC<EventCardProps> = ({
           {event.tags?.slice(0, 3).map((tag) => (
             <span
               key={tag}
-              className="inline-flex items-center px-2 py-1 rounded text-[10px] bg-gray-50 text-gray-600 border border-gray-200"
+              className="tag-style inline-flex items-center px-2 py-1 rounded text-[10px] border"
+              style={{
+                backgroundColor: theme === 'dark' ? '#4b5563' : '#f3f4f6',
+                color: theme === 'dark' ? '#e5e7eb' : '#374151',
+                borderColor: theme === 'dark' ? '#6b7280' : '#d1d5db'
+              }}
             >
               <Tag className="w-3 h-3 mr-1" /> {tag}
             </span>
           ))}
         </div>
 
-        <div className="pt-4 border-t border-gray-100 flex justify-between items-center text-[10px] text-gray-400">
+        <div 
+          className="pt-4 border-t flex justify-between items-center text-[10px]"
+          style={{
+            borderColor: theme === 'dark' ? '#374151' : '#f3f4f6',
+            color: theme === 'dark' ? '#6b7280' : '#9ca3af'
+          }}
+        >
           {/* 🔑 Updated to use your consistent formatDate helper */}
           <span>Published {formatDate(event.createdAt)}</span>
-          <span className="text-indigo-600 font-bold hover:underline uppercase tracking-tighter">
+          <span 
+            className="font-bold hover:underline uppercase tracking-tighter"
+            style={{
+              color: theme === 'dark' ? '#818cf8' : '#4f46e5'
+            }}
+          >
             View Details
           </span>
         </div>

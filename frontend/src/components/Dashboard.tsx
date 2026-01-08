@@ -173,19 +173,19 @@ const StatCard: React.FC<any> = ({
   icon,
   color,
 }) => (
-  <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex items-start justify-between">
+  <div className="dashboard-card rounded-xl p-6 shadow-sm flex items-start justify-between">
     <div>
-      <p className="text-sm font-medium text-gray-500 mb-1">{title}</p>
-      <h3 className="text-2xl font-bold text-gray-900">{value}</h3>
+      <p className="text-sm font-medium dashboard-card-text mb-1">{title}</p>
+      <h3 className="text-2xl font-bold dashboard-card-header">{value}</h3>
       {change && (
         <p
           className={`text-xs mt-2 font-medium ${
-            isPositive ? "text-green-600" : "text-red-600"
+            isPositive ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
           }`}
         >
           {isPositive ? "+" : ""}
           {change}{" "}
-          <span className="text-gray-400 font-normal">vs last month</span>
+          <span className="dashboard-card-text-secondary font-normal">vs last month</span>
         </p>
       )}
     </div>
@@ -523,22 +523,22 @@ export function Dashboard({
     events: any[];
     limit?: number;
   }) => (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-        <h3 className="font-semibold text-gray-900">
+    <div className="dashboard-card rounded-xl shadow-sm overflow-hidden">
+      <div className="px-6 py-4 dashboard-card-header flex justify-between items-center">
+        <h3 className="font-semibold">
           {activeTab === "event management"
             ? "Event Management"
             : "Recent Events"}
         </h3>
         {isAdmin && activeTab === "event management" && (
-          <button className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
+          <button className="text-sm dashboard-link hover:text-indigo-700 font-medium">
             Approve Pending Flagged Events
           </button>
         )}
         {!isAdmin && activeTab !== "event management" && (
           <button
             onClick={() => setCurrentPage("discover")}
-            className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+            className="text-sm dashboard-link font-medium"
           >
             View All
           </button>
@@ -546,7 +546,7 @@ export function Dashboard({
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left">
-          <thead className="text-xs text-gray-500 uppercase bg-gray-50/50">
+          <thead className="text-xs uppercase dashboard-table-header">
             <tr>
               <th className="px-6 py-3 font-medium">Event Name</th>
               <th className="px-6 py-3 font-medium">Category</th>
@@ -561,9 +561,9 @@ export function Dashboard({
             {eventList.slice(0, limit || eventList.length).map((event) => (
               <tr
                 key={event._id || event.id}
-                className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors"
+                className="dashboard-table-row transition-colors"
               >
-                <td className="px-6 py-4 font-medium text-gray-900">
+                <td className="px-6 py-4 font-medium dashboard-card-header">
                   <div className="flex items-center">
                     <div className="w-8 h-8 rounded bg-indigo-100 text-indigo-600 flex items-center justify-center mr-3">
                       <Calendar className="w-4 h-4" />
@@ -572,18 +572,18 @@ export function Dashboard({
                       <div className="font-medium line-clamp-1">
                         {event.title}
                       </div>
-                      <div className="text-xs text-gray-500 line-clamp-1">
+                      <div className="text-xs dashboard-card-text line-clamp-1">
                         {event.location}
                       </div>
                     </div>
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 capitalize">
+                  <span className="px-2.5 py-1 rounded-full text-xs font-medium dashboard-badge capitalize">
                     {event.category}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-gray-500">
+                <td className="px-6 py-4 dashboard-card-text">
                   {formatDate(event.startDate)}
                 </td>
                 <td className="px-6 py-4">
@@ -633,16 +633,16 @@ export function Dashboard({
   );
 
   const UserActivityTable = () => (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-        <h3 className="font-semibold text-gray-900">User Activity</h3>
-        <button className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
+    <div className="dashboard-card rounded-xl shadow-sm overflow-hidden">
+      <div className="px-6 py-4 dashboard-card-header flex justify-between items-center">
+        <h3 className="font-semibold">User Activity</h3>
+        <button className="text-sm dashboard-link font-medium">
           View All Users
         </button>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left">
-          <thead className="text-xs text-gray-500 uppercase bg-gray-50/50">
+          <thead className="text-xs dashboard-table-header uppercase">
             <tr>
               <th className="px-6 py-3 font-medium">User</th>
               <th className="px-6 py-3 font-medium">Role</th>
@@ -658,9 +658,9 @@ export function Dashboard({
             {allUsers.map((u) => (
               <tr
                 key={u.id}
-                className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors"
+                className="dashboard-table-row transition-colors"
               >
-                <td className="px-6 py-4 font-medium text-gray-900">
+                <td className="px-6 py-4 font-medium dashboard-card-header">
                   <div className="flex items-center gap-3">
                     <div
                       className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold uppercase ${
@@ -687,10 +687,10 @@ export function Dashboard({
                     {u.role}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-gray-500">
+                <td className="px-6 py-4 dashboard-card-text">
                   {u.university || "-"}
                 </td>
-                <td className="px-6 py-4 text-gray-500">
+                <td className="px-6 py-4 dashboard-card-text">
                   {u.lastActive || "Never"}
                 </td>
                 <td className="px-6 py-4">
@@ -730,16 +730,16 @@ export function Dashboard({
     registrations: any[];
     showAdminActions?: boolean;
   }) => (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-        <h3 className="font-semibold text-gray-900">Event Registrations</h3>
+    <div className="dashboard-card rounded-xl shadow-sm overflow-hidden">
+      <div className="px-6 py-4 dashboard-card-header flex justify-between items-center">
+        <h3 className="font-semibold">Event Registrations</h3>
         <div className="flex gap-2">
-          <button className="p-1.5 text-gray-500 hover:bg-gray-100 rounded-lg">
+          <button className="p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
             <Filter className="w-4 h-4" />
           </button>
           <button
             onClick={handleExportData}
-            className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+            className="text-sm dashboard-link font-medium"
           >
             Export CSV
           </button>
@@ -747,7 +747,7 @@ export function Dashboard({
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left">
-          <thead className="text-xs text-gray-500 uppercase bg-gray-50/50">
+          <thead className="text-xs dashboard-table-header uppercase">
             <tr>
               <th className="px-6 py-3 font-medium">Student</th>
               <th className="px-6 py-3 font-medium">Event</th>
@@ -759,7 +759,7 @@ export function Dashboard({
           <tbody>
             {regList.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                <td colSpan={5} className="px-6 py-8 text-center dashboard-card-text">
                   No registrations found.
                 </td>
               </tr>
@@ -767,17 +767,17 @@ export function Dashboard({
               regList.map((reg) => (
                 <tr
                   key={reg._id} // 🔑 Changed from reg.id to reg._id
-                  className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors"
+                  className="dashboard-table-row transition-colors"
                 >
-                  <td className="px-6 py-4 font-medium text-gray-900">
+                  <td className="px-6 py-4 font-medium dashboard-card-header">
                     {/* 🔑 Logic: Get name from populated student object */}
                     {reg.student?.fullName || "User"}
                   </td>
-                  <td className="px-6 py-4 text-gray-600">
+                  <td className="px-6 py-4 dashboard-card-text">
                     {/* 🔑 Logic: Get title from populated event object */}
                     {reg.event?.title || "Event Details"}
                   </td>
-                  <td className="px-6 py-4 text-gray-500">
+                  <td className="px-6 py-4 dashboard-card-text">
                     {/* 🔑 Logic: Use appliedAt date from DB */}
                     {formatDate(reg.appliedAt || reg.createdAt)}
                   </td>
@@ -826,7 +826,7 @@ export function Dashboard({
                         Waiting...
                       </div>
                     ) : (
-                      <div className="text-xs text-gray-600 font-medium">
+                      <div className="text-xs dashboard-card-text font-medium">
                         {getCollegeName(
                           reg.eventId || reg.event?._id || reg.event?.id
                         )}
@@ -843,16 +843,16 @@ export function Dashboard({
   );
 
   const AdminLogsTable = () => (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-        <h3 className="font-semibold text-gray-900">System Logs</h3>
-        <button className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">
+    <div className="dashboard-card rounded-xl shadow-sm overflow-hidden">
+      <div className="px-6 py-4 dashboard-card-header flex justify-between items-center">
+        <h3 className="font-semibold">System Logs</h3>
+        <button className="text-sm dashboard-link font-medium flex items-center gap-1">
           <Download className="w-4 h-4" /> Download
         </button>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left">
-          <thead className="text-xs text-gray-500 uppercase bg-gray-50/50">
+          <thead className="text-xs dashboard-table-header uppercase">
             <tr>
               <th className="px-6 py-3 font-medium">Timestamp</th>
               <th className="px-6 py-3 font-medium">Admin</th>
@@ -864,23 +864,23 @@ export function Dashboard({
             {adminLogs.map((log) => (
               <tr
                 key={log.id}
-                className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors"
+                className="dashboard-table-row transition-colors"
               >
-                <td className="px-6 py-4 text-gray-500 whitespace-nowrap">
+                <td className="px-6 py-4 dashboard-card-text whitespace-nowrap">
                   <div className="flex items-center">
-                    <Clock className="w-3 h-3 mr-2 text-gray-400" />
+                    <Clock className="w-3 h-3 mr-2 text-gray-400 dark:text-gray-500" />
                     {formatDate(log.timestamp)}
                   </div>
                 </td>
-                <td className="px-6 py-4 font-medium text-gray-900">
+                <td className="px-6 py-4 font-medium dashboard-card-header">
                   {getAdminName(log.userId)}
                 </td>
                 <td className="px-6 py-4">
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium dashboard-badge">
                     {log.action}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-gray-600 max-w-xs truncate">
+                <td className="px-6 py-4 dashboard-card-text max-w-xs truncate">
                   {log.details}
                 </td>
               </tr>
@@ -899,7 +899,7 @@ export function Dashboard({
         {/* 1. Sidebar Navigation */}
         <aside
           className={`
-                 bg-white dark:bg-gray-800 shadow-2xl flex flex-col 
+                 shadow-2xl flex flex-col 
                 transition-all duration-300 ease-in-out z-50 h-screen overflow-hidden
                 fixed top-0 left-0
                 ${isCollapsed ? "w-20" : "w-64"}
@@ -1116,7 +1116,7 @@ export function Dashboard({
                   )}
                   {isAdmin && (
                     <>
-                      <button className="flex items-center gap-2 bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors shadow-sm text-sm font-medium">
+                      <button className="flex items-center gap-2 dashboard-button-secondary px-4 py-2 rounded-lg transition-colors shadow-sm text-sm font-medium">
                         <Filter className="w-4 h-4" /> Filter
                       </button>
                       <button className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm text-sm font-medium">
@@ -1260,8 +1260,8 @@ export function Dashboard({
                     {activeTab === "overview" && (
                       <>
                         {isAdmin && (
-                          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                            <h3 className="font-semibold text-gray-900 mb-4">
+                          <div className="dashboard-card p-6 rounded-xl shadow-sm">
+                            <h3 className="font-semibold dashboard-card-header mb-4">
                               Registration Trends
                             </h3>
                             <div className="h-64 w-full">
@@ -1340,9 +1340,9 @@ export function Dashboard({
                       activeTab !== "registrations" &&
                       activeTab !== "admin logs" &&
                       activeTab !== "my events" && (
-                        <div className="bg-white p-12 rounded-xl shadow-sm border border-gray-100 text-center text-gray-500">
-                          <FileText className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                          <h3 className="text-lg font-medium text-gray-900">
+                        <div className="dashboard-card p-12 rounded-xl shadow-sm text-center dashboard-card-text">
+                          <FileText className="w-12 h-12 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
+                          <h3 className="text-lg font-medium dashboard-card-header">
                             No content available
                           </h3>
                           <p>This section is under development.</p>
@@ -1357,8 +1357,8 @@ export function Dashboard({
                 <div className="space-y-6">
                   {activeTab === "overview" ? (
                     <>
-                      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                        <h3 className="font-semibold text-gray-900 mb-4">
+                      <div className="dashboard-card rounded-xl shadow-sm p-6">
+                        <h3 className="font-semibold dashboard-card-header mb-4">
                           Quick Actions
                         </h3>
                         <div className="space-y-3">
@@ -1372,14 +1372,14 @@ export function Dashboard({
                           )}
                           <button
                             onClick={() => setActiveTab("my events")}
-                            className="w-full bg-gray-50 text-gray-700 py-2 px-4 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors border border-gray-200"
+                            className="w-full dashboard-button-secondary py-2 px-4 rounded-lg text-sm font-medium transition-colors"
                           >
                             View All Registrations
                           </button>
 
                           <button
                             onClick={handleExportData}
-                            className="w-full bg-gray-50 text-gray-700 py-2 px-4 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors border border-gray-200"
+                            className="w-full dashboard-button-secondary py-2 px-4 rounded-lg text-sm font-medium transition-colors"
                           >
                             Export Event Data
                           </button>
@@ -1387,32 +1387,32 @@ export function Dashboard({
                       </div>
 
                       {/* system full box  */}
-                      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                        <h3 className="font-semibold text-gray-900 mb-4">
+                      <div className="dashboard-card rounded-xl shadow-sm p-6">
+                        <h3 className="font-semibold dashboard-card-header mb-4">
                           System Health
                         </h3>
                         <div className="space-y-4">
                           <div className="flex justify-between items-center text-sm">
-                            <span className="text-gray-500">Server Status</span>
-                            <span className="text-green-600 font-medium flex items-center gap-1">
+                            <span className="dashboard-card-text">Server Status</span>
+                            <span className="text-green-600 dark:text-green-400 font-medium flex items-center gap-1">
                               <CheckCircle className="w-3 h-3" /> Healthy
                             </span>
                           </div>
                           <div className="flex justify-between items-center text-sm">
-                            <span className="text-gray-500">Database</span>
-                            <span className="text-green-600 font-medium">
+                            <span className="dashboard-card-text">Database</span>
+                            <span className="text-green-600 dark:text-green-400 font-medium">
                               Connected
                             </span>
                           </div>
                           <div className="flex justify-between items-center text-sm">
-                            <span className="text-gray-500">API Response</span>
-                            <span className="text-gray-900 font-medium">
+                            <span className="dashboard-card-text">API Response</span>
+                            <span className="dashboard-card-header font-medium">
                               152ms
                             </span>
                           </div>
                           <div className="flex justify-between items-center text-sm">
-                            <span className="text-gray-500">Uptime</span>
-                            <span className="text-gray-900 font-medium">
+                            <span className="dashboard-card-text">Uptime</span>
+                            <span className="dashboard-card-header font-medium">
                               99.9%
                             </span>
                           </div>
@@ -1420,11 +1420,11 @@ export function Dashboard({
                       </div>
                     </>
                   ) : (
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                      <h3 className="font-semibold text-gray-900 mb-4">
+                    <div className="dashboard-card rounded-xl shadow-sm p-6">
+                      <h3 className="font-semibold dashboard-card-header mb-4">
                         Information
                       </h3>
-                      <p className="text-sm text-gray-500 mb-4">
+                      <p className="text-sm dashboard-card-text mb-4">
                         Select an item from the main list to view more details
                         here.
                       </p>

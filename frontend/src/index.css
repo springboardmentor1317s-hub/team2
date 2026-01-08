@@ -1977,3 +1977,478 @@ body, html {
 .dashboard-layout .main-content {
   transition: margin-left 300ms ease-in-out;
 }
+/* Dashboard Card Theme Override */
+.dashboard-card {
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  color: #111827;
+}
+
+.dark .dashboard-card {
+  background-color: #1f2937 !important;
+  border: 1px solid #374151 !important;
+  color: #f9fafb !important;
+}
+
+/* Dashboard Card Headers */
+.dashboard-card-header {
+  color: #111827;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.dark .dashboard-card-header {
+  color: #f9fafb !important;
+  border-bottom: 1px solid #374151 !important;
+}
+
+/* Dashboard Card Text */
+.dashboard-card-text {
+  color: #6b7280;
+}
+
+.dark .dashboard-card-text {
+  color: #9ca3af !important;
+}
+
+/* Dashboard Card Secondary Text */
+.dashboard-card-text-secondary {
+  color: #9ca3af;
+}
+
+.dark .dashboard-card-text-secondary {
+  color: #6b7280 !important;
+}
+
+/* Dashboard Table Rows */
+.dashboard-table-row {
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.dark .dashboard-table-row {
+  border-bottom: 1px solid #374151 !important;
+}
+
+.dashboard-table-row:hover {
+  background-color: #f9fafb;
+}
+
+.dark .dashboard-table-row:hover {
+  background-color: #374151 !important;
+}
+
+/* Dashboard Table Headers */
+.dashboard-table-header {
+  background-color: rgba(249, 250, 251, 0.5);
+  color: #6b7280;
+}
+
+.dark .dashboard-table-header {
+  background-color: rgba(55, 65, 81, 0.5) !important;
+  color: #9ca3af !important;
+}
+
+/* Dashboard Buttons */
+.dashboard-button-secondary {
+  background-color: #f9fafb;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+}
+
+.dark .dashboard-button-secondary {
+  background-color: #374151 !important;
+  color: #d1d5db !important;
+  border: 1px solid #4b5563 !important;
+}
+
+.dashboard-button-secondary:hover {
+  background-color: #f3f4f6;
+}
+
+.dark .dashboard-button-secondary:hover {
+  background-color: #4b5563 !important;
+}
+
+/* Dashboard Status Badges */
+.dashboard-badge {
+  background-color: #f3f4f6;
+  color: #4b5563;
+}
+
+.dark .dashboard-badge {
+  background-color: #374151 !important;
+  color: #d1d5db !important;
+}
+
+/* Dashboard Links */
+.dashboard-link {
+  color: #4f46e5;
+}
+
+.dark .dashboard-link {
+  color: #818cf8 !important;
+}
+
+.dashboard-link:hover {
+  color: #3730a3;
+}
+
+.dark .dashboard-link:hover {
+  color: #a5b4fc !important;
+}
+
+/* Events Discovery Page Dark Mode Override */
+.discovery-page {
+  background-color: #f9fafb !important; /* gray-50 */
+}
+
+.dark .discovery-page {
+  background-color: #111827 !important; /* gray-900 */
+}
+
+/* Events Discovery Container */
+.discovery-page .max-w-7xl {
+  background-color: #ffffff !important;
+  border-color: #e5e7eb !important;
+}
+
+.dark .discovery-page .max-w-7xl {
+  background-color: #1f2937 !important; /* gray-800 */
+  border-color: #374151 !important; /* gray-700 */
+}
+
+/* Events Discovery Text */
+.discovery-page h1 {
+  color: #111827 !important;
+}
+
+.dark .discovery-page h1 {
+  color: #ffffff !important;
+}
+
+.discovery-page p {
+  color: #6b7280 !important;
+}
+
+.dark .discovery-page p {
+  color: #d1d5db !important;
+}
+
+/* Events Discovery Filter Bar */
+.discovery-page .bg-gray-50 {
+  background-color: #f9fafb !important;
+  border-color: #e5e7eb !important;
+}
+
+.dark .discovery-page .bg-gray-50 {
+  background-color: #374151 !important; /* gray-700 */
+  border-color: #4b5563 !important; /* gray-600 */
+}
+
+/* Events Discovery Inputs */
+.discovery-page input,
+.discovery-page select {
+  background-color: #ffffff !important;
+  border-color: #d1d5db !important;
+  color: #111827 !important;
+}
+
+.dark .discovery-page input,
+.dark .discovery-page select {
+  background-color: #1f2937 !important; /* gray-800 */
+  border-color: #4b5563 !important; /* gray-600 */
+  color: #ffffff !important;
+}
+
+/* Events Discovery Labels */
+.discovery-page label {
+  color: #6b7280 !important;
+}
+
+.dark .discovery-page label {
+  color: #d1d5db !important;
+}
+
+/* Events Discovery Buttons */
+.discovery-page .bg-indigo-500 {
+  background-color: #6366f1 !important;
+}
+
+.dark .discovery-page .bg-indigo-500 {
+  background-color: #4f46e5 !important;
+}
+
+.discovery-page .bg-gray-200 {
+  background-color: #e5e7eb !important;
+  color: #374151 !important;
+}
+
+.dark .discovery-page .bg-gray-200 {
+  background-color: #4b5563 !important;
+  color: #e5e7eb !important;
+}
+
+/* Event Cards Dark Mode */
+.event-card {
+  background-color: #ffffff !important;
+  border-color: #e5e7eb !important;
+}
+
+.dark .event-card {
+  background-color: #1f2937 !important; /* gray-800 */
+  border-color: #374151 !important; /* gray-700 */
+}
+
+/* Event Card Text */
+.event-card h3 {
+  color: #111827 !important;
+}
+
+.dark .event-card h3 {
+  color: #ffffff !important;
+}
+
+.event-card p {
+  color: #6b7280 !important;
+}
+
+.dark .event-card p {
+  color: #9ca3af !important;
+}
+
+/* Event Card Icons */
+.event-card .text-indigo-600 {
+  color: #4f46e5 !important;
+}
+
+.dark .event-card .text-indigo-600 {
+  color: #818cf8 !important;
+}
+
+.event-card .text-gray-600 {
+  color: #6b7280 !important;
+}
+
+.dark .event-card .text-gray-600 {
+  color: #d1d5db !important;
+}
+
+.event-card .text-gray-700 {
+  color: #374151 !important;
+}
+
+.dark .event-card .text-gray-700 {
+  color: #e5e7eb !important;
+}
+
+/* Event Card Borders */
+.event-card .border-gray-50 {
+  border-color: #f9fafb !important;
+}
+
+.dark .event-card .border-gray-50 {
+  border-color: #374151 !important;
+}
+
+.event-card .border-gray-100 {
+  border-color: #f3f4f6 !important;
+}
+
+.dark .event-card .border-gray-100 {
+  border-color: #4b5563 !important;
+}
+
+/* Event Card Tags */
+.event-card .bg-gray-50 {
+  background-color: #f9fafb !important;
+  border-color: #e5e7eb !important;
+}
+
+.dark .event-card .bg-gray-50 {
+  background-color: #374151 !important;
+  border-color: #4b5563 !important;
+}
+
+/* No Events Found Message */
+.discovery-page .text-center.p-12 {
+  background-color: #f9fafb !important;
+  border-color: #e5e7eb !important;
+}
+
+.dark .discovery-page .text-center.p-12 {
+  background-color: #374151 !important;
+  border-color: #4b5563 !important;
+}
+
+.discovery-page .text-center.p-12 h3 {
+  color: #6b7280 !important;
+}
+
+.dark .discovery-page .text-center.p-12 h3 {
+  color: #9ca3af !important;
+}
+/* Force Dark Mode for Discovery Page - High Specificity */
+html.dark .dashboard-layout .main-content .discovery-page,
+body.dark .discovery-page,
+.dark .dashboard-layout .main-content .discovery-page {
+  background-color: #111827 !important; /* gray-900 */
+}
+
+html.dark .dashboard-layout .main-content .discovery-page .max-w-7xl,
+body.dark .discovery-page .max-w-7xl,
+.dark .dashboard-layout .main-content .discovery-page .max-w-7xl {
+  background-color: #1f2937 !important; /* gray-800 */
+  border-color: #374151 !important; /* gray-700 */
+}
+
+/* Force Dark Mode for Event Cards - High Specificity */
+html.dark .dashboard-layout .main-content .discovery-page .event-card,
+body.dark .discovery-page .event-card,
+.dark .dashboard-layout .main-content .discovery-page .event-card {
+  background-color: #1f2937 !important; /* gray-800 */
+  border-color: #374151 !important; /* gray-700 */
+}
+
+/* Ensure all text is properly colored in dark mode */
+html.dark .dashboard-layout .main-content .discovery-page h1,
+html.dark .dashboard-layout .main-content .discovery-page h2,
+html.dark .dashboard-layout .main-content .discovery-page h3,
+body.dark .discovery-page h1,
+body.dark .discovery-page h2,
+body.dark .discovery-page h3,
+.dark .dashboard-layout .main-content .discovery-page h1,
+.dark .dashboard-layout .main-content .discovery-page h2,
+.dark .dashboard-layout .main-content .discovery-page h3 {
+  color: #ffffff !important;
+}
+
+html.dark .dashboard-layout .main-content .discovery-page p,
+html.dark .dashboard-layout .main-content .discovery-page span,
+body.dark .discovery-page p,
+body.dark .discovery-page span,
+.dark .dashboard-layout .main-content .discovery-page p,
+.dark .dashboard-layout .main-content .discovery-page span {
+  color: #d1d5db !important;
+}
+
+/* Override any remaining white backgrounds in dark mode */
+html.dark .dashboard-layout .main-content .discovery-page *,
+body.dark .discovery-page *,
+.dark .dashboard-layout .main-content .discovery-page * {
+  border-color: #374151 !important;
+}
+
+html.dark .dashboard-layout .main-content .discovery-page .bg-white,
+body.dark .discovery-page .bg-white,
+.dark .dashboard-layout .main-content .discovery-page .bg-white {
+  background-color: #1f2937 !important;
+}
+
+html.dark .dashboard-layout .main-content .discovery-page .text-gray-900,
+body.dark .discovery-page .text-gray-900,
+.dark .dashboard-layout .main-content .discovery-page .text-gray-900 {
+  color: #ffffff !important;
+}
+
+html.dark .dashboard-layout .main-content .discovery-page .text-gray-600,
+body.dark .discovery-page .text-gray-600,
+.dark .dashboard-layout .main-content .discovery-page .text-gray-600 {
+  color: #d1d5db !important;
+}
+
+html.dark .dashboard-layout .main-content .discovery-page .text-gray-500,
+body.dark .discovery-page .text-gray-500,
+.dark .dashboard-layout .main-content .discovery-page .text-gray-500 {
+  color: #9ca3af !important;
+}
+/* Universal Dark Mode Override for Discovery Page */
+[data-theme="dark"] .discovery-page,
+[class*="dark"] .discovery-page,
+.dark .discovery-page {
+  background-color: #111827 !important;
+}
+
+[data-theme="dark"] .discovery-page *[class*="bg-white"],
+[class*="dark"] .discovery-page *[class*="bg-white"],
+.dark .discovery-page *[class*="bg-white"] {
+  background-color: #1f2937 !important;
+}
+
+[data-theme="dark"] .discovery-page *[class*="text-gray-900"],
+[class*="dark"] .discovery-page *[class*="text-gray-900"],
+.dark .discovery-page *[class*="text-gray-900"] {
+  color: #ffffff !important;
+}
+
+/* Catch-all for any remaining white backgrounds */
+.dark .discovery-page div,
+.dark .discovery-page section,
+.dark .discovery-page article {
+  background-color: inherit;
+}
+
+.dark .discovery-page .bg-white,
+.dark .discovery-page [style*="background-color: white"],
+.dark .discovery-page [style*="background-color: #fff"],
+.dark .discovery-page [style*="background-color: #ffffff"] {
+  background-color: #1f2937 !important;
+}
+/* Fix Light Mode Background for Discovery Page */
+html:not(.dark) .discovery-page,
+body:not(.dark) .discovery-page,
+.discovery-page:not(.dark) {
+  background-color: #f9fafb !important; /* gray-50 - light mode */
+}
+
+html:not(.dark) .discovery-page .max-w-7xl,
+body:not(.dark) .discovery-page .max-w-7xl {
+  background-color: #ffffff !important; /* white - light mode */
+  border-color: #e5e7eb !important; /* gray-200 - light mode */
+}
+
+/* Ensure light mode text colors */
+html:not(.dark) .discovery-page h1,
+html:not(.dark) .discovery-page h2,
+html:not(.dark) .discovery-page h3 {
+  color: #111827 !important; /* gray-900 - light mode */
+}
+
+html:not(.dark) .discovery-page p,
+html:not(.dark) .discovery-page span {
+  color: #6b7280 !important; /* gray-500 - light mode */
+}
+
+/* Fix Event Cards in Light Mode */
+html:not(.dark) .discovery-page .event-card {
+  background-color: #ffffff !important; /* white - light mode */
+  border-color: #e5e7eb !important; /* gray-200 - light mode */
+}
+
+/* Override any dark styles that might be applied incorrectly */
+html:not(.dark) .discovery-page *:not(.dark) {
+  background-color: inherit;
+}
+/* Improved Tag Styling for Event Cards */
+.event-card .tag-style {
+  transition: all 0.2s ease-in-out;
+}
+
+.event-card .tag-style:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Light Mode Tags */
+html:not(.dark) .event-card .tag-style {
+  background-color: #f3f4f6 !important; /* gray-100 */
+  color: #374151 !important; /* gray-700 */
+  border-color: #d1d5db !important; /* gray-300 */
+}
+
+/* Dark Mode Tags */
+html.dark .event-card .tag-style,
+body.dark .event-card .tag-style,
+.dark .event-card .tag-style {
+  background-color: #4b5563 !important; /* gray-600 */
+  color: #e5e7eb !important; /* gray-200 */
+  border-color: #6b7280 !important; /* gray-500 */
+}
