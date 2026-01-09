@@ -7,7 +7,7 @@ const authToken = async (req, res, next) => {
   if (!token) {
     return res
       .status(401)
-      .json({ msg: "Access denied. Authentication token is missing" });
+      .json({ message: "Access denied. Authentication token is missing" });
   }
 
   try {
@@ -19,7 +19,7 @@ const authToken = async (req, res, next) => {
     if (!user)
       return res
         .status(401)
-        .json({ msg: "Authentication failed. User does not exist!" });
+        .json({ message: "Authentication failed. User does not exist!" });
 
     req.user = user; // mongoose doc (without password)
     next();
@@ -27,16 +27,16 @@ const authToken = async (req, res, next) => {
     console.error("Auth middleware error:", err.message);
     res
       .status(401)
-      .json({ msg: "Authentication failed. Invalid or expired token" });
+      .json({ message: "Authentication failed. Invalid or expired token" });
   }
 };
 
 const verifyAdmin = (req, res, next) => {
   if (!req.user) {
-    return res.status(401).json({ msg: "Access denied. Please login again" });
+    return res.status(401).json({ message: "Access denied. Please login again" });
   }
   if (req.user.role !== "admin") {
-    return res.status(403).json({ msg: "Forbidden. Admin access required" });
+    return res.status(403).json({ message: "Forbidden. Admin access required" });
   }
   next();
 };
