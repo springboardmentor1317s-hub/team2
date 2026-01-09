@@ -15,9 +15,11 @@ import { EventCard } from "./components/EventCard";
 import ChatBot from "./components/chatbot";
 import WhatsAppBtn from "./components/WhatsAppBtn";
 import { Event } from "./types";
+import { useTheme } from "./context/ThemeContext";
+import { toast } from "sonner";
 
 // Define the pages for clarity
-type UserRole = "student" | "organizer" | "admin";
+type UserRole = "student" | "admin";
 type AppPages = "home" | "login" | "register" | "dashboard" | "discover";
 
 // Re-defining the types locally for clarity/completeness
@@ -32,7 +34,7 @@ interface User {
 
 interface Registration {
   _id: string;
-  eventId: { _id: string; title: string }; 
+  eventId: { _id: string; title: string };
   userId: { _id: string; name: string; email: string };
   status: "pending" | "approved" | "rejected";
   timestamp: string;
@@ -52,7 +54,7 @@ const MOCK_EVENTS: Event[] = [
     description: "Code all night!",
     maxParticipants: 50,
     collegeId: "C1",
-    organizerId: "U2",
+    adminId: "U2",
     participantsCount: 5,
     status: "upcoming",
     tags: ["tech"],
@@ -74,6 +76,7 @@ const MOCK_REGISTRATIONS: Registration[] = [
 ];
 
 export default function App() {
+  const { theme, setThemeExplicit } = useTheme();
   // 1. Authentication State
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
@@ -129,6 +132,13 @@ export default function App() {
     fetchEvents();
   }, []); // Run only once on mount
 
+  // Force landing page to stay in dark mode regardless of user preference
+  useEffect(() => {
+    if (currentPage === "home" && theme !== "dark") {
+      setThemeExplicit("dark");
+    }
+  }, [currentPage, theme, setThemeExplicit]);
+
   // --- Core Functions ---
   const handleLoginSuccess = (user: User) => {
     setTimeout(() => {
@@ -143,10 +153,10 @@ export default function App() {
       };
       setIsAuthenticated(true);
       setCurrentUser(fullUser);
-      
+
       // Save user to localStorage for persistence
       localStorage.setItem("user", JSON.stringify(fullUser));
-      
+
       setCurrentPage("dashboard");
       console.log("State updated. Should redirect to dashboard.");
     }, 0);
@@ -158,7 +168,7 @@ export default function App() {
     setIsAuthenticated(false);
     setCurrentUser(null);
     setCurrentPage("home"); // Logout always returns to home
-    console.log("User logged out.");
+    toast.success("User logged out.");
   };
 
   // event/user pair //
@@ -197,12 +207,14 @@ export default function App() {
 
       if (!response.ok) {
         const error = await response.json();
-        console.error("Error creating event:", error.message);
+        toast.error(error.message);
         return;
       }
 
       const result = await response.json();
       const createdEvent = result.data;
+
+      toast.success(result.message)
 
       // Update local state with the created event from backend
       const newEvent: Event = {
@@ -216,7 +228,7 @@ export default function App() {
         description: createdEvent.description,
         maxParticipants: createdEvent.maxParticipants,
         collegeId: createdEvent.collegeId,
-        organizerId: createdEvent.organizerId,
+        adminId: createdEvent.adminId,
         participantsCount: createdEvent.participantsCount,
         status: createdEvent.status,
         tags: createdEvent.tags,
@@ -227,9 +239,9 @@ export default function App() {
       setEvents([newEvent, ...events]);
       setIsEventFormOpen(false);
       console.log(`Event ${newEvent.title} created successfully in database.`);
-      
+
       // Fetch fresh events from backend to ensure consistency
-      await fetchEvents();
+      fetchEvents();
     } catch (error) {
       console.error("Error creating event:", error);
     }
