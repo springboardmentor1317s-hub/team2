@@ -11,6 +11,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { getEventStatus } from "../utils/eventStatus";
+import { formatDate } from "../utils/formatters";
 
 interface EventModalProps {
   event: Event | null;
@@ -125,7 +126,7 @@ const EventModal: React.FC<EventModalProps> = ({
                         Start Time
                       </p>
                       <p className="text-sm text-gray-600">
-                        {new Date(event.startDate).toLocaleString()}
+                        {formatDate(event.startDate)}
                       </p>
                     </div>
                   </div>
@@ -136,7 +137,7 @@ const EventModal: React.FC<EventModalProps> = ({
                         End Time
                       </p>
                       <p className="text-sm text-gray-600">
-                        {new Date(event.endDate).toLocaleString()}
+                        {formatDate(event.endDate)}
                       </p>
                     </div>
                   </div>
