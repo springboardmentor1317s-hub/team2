@@ -8,6 +8,7 @@ import {
   EyeOff,
 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 interface LoginProps {
   setCurrentPage: (page: string) => void;
@@ -51,22 +52,18 @@ export function Login({ setCurrentPage, onLoginSuccess }: LoginProps) {
 
       if (response.ok) {
         // Success: status is 200-299
-        console.log("Login Successful:", responseData.message);
+        toast.success(responseData.message);
         localStorage.setItem("token", responseData.token);
         // Assuming this function is passed down from App.tsx
         onLoginSuccess(responseData.user);
       } else {
         // Failure: status is 400 or 500. The error message is already in the 'data' object.
-        console.error("Login Failed:", responseData.message);
-        alert(
-          `Login Failed: ${
-            responseData.message || "An unexpected error occurred."
-          }`
-        );
+        toast.error(responseData.message);
+        
       }
     } catch (error) {
       console.error("Network Error or Stream Failure:", error);
-      alert("Failed to connect to the server.");
+      toast.error("Failed to connect to the server.");
     }
   };
 

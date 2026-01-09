@@ -9,6 +9,7 @@ import {
   EyeOff,
 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 // Add props definition to Register if you want to switch to login view on success
 interface RegisterProps {
@@ -79,19 +80,17 @@ export function Register({
       if (response.ok) {
        
         localStorage.setItem("token", responseData.token);
-        console.log("Registration successful, redirecting..."); // New log for confirmation
-        
+        toast.success(responseData.message) // New log for confirmation
         
         // 🔑 Trigger the success handler to redirect to Dashboard
         onRegistrationSuccess(responseData.user);
       } else {
         // Handle errors like 'User already exists'
-        console.error("Registration Failed:", responseData.message);
-        alert(`Registration Failed: ${responseData.message}`);
+        toast.error(responseData.message)
       }
     } catch (error) {
       console.error("Network Error:", error);
-      alert("Failed to connect to the server. Please check your backend.");
+      toast.error("Failed to connect to the server");
     }
   };
 
@@ -197,7 +196,7 @@ export function Register({
                     <option value="">Select your role</option>
                     <option value="student">student</option>
                     <option value="admin">Admin</option>
-                    <option value="organizer">Organizer</option>
+
                   </select>
                 </div>
 

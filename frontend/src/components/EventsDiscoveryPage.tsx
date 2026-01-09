@@ -3,6 +3,7 @@ import { Search, Filter, Loader2 } from "lucide-react";
 import { EventCard } from "./EventCard";
 import EventModal from "./EventModal";
 import { Event } from "../types";
+import { toast } from "sonner";
 
 interface EventsDiscoveryPageProps {
   initialEvents?: Event[];
@@ -93,7 +94,7 @@ export const EventsDiscoveryPage: React.FC<EventsDiscoveryPageProps> = ({
     try {
       const token = localStorage.getItem("token");
       if (!token) {
-        alert("Please login to register for events!");
+        toast.info("Please login to register for events!");
         return;
       }
 
@@ -109,12 +110,12 @@ export const EventsDiscoveryPage: React.FC<EventsDiscoveryPageProps> = ({
       const data = await response.json();
 
       if (response.ok) {
-        alert("✅ Registration submitted! Waiting for Admin approval.");
+        toast.success("Registration submitted. Awaiting admin approval");
         // Update local state so UI reflects "Registered" immediately
         setUserRegistrations((prev) => [...prev, eventId]);
         setSelectedEvent(null);
       } else {
-        alert(`❌ ${data.message}`);
+        toast.error(`${data.message}`);
       }
     } catch (error) {
       console.error("Error registering:", error);
