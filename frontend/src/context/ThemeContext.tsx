@@ -7,6 +7,7 @@ type Theme = "light" | "dark";
 interface ThemeContextProps {
   theme: Theme;
   toggleTheme: () => void;
+  setThemeExplicit: (theme: Theme) => void;
 }
 
 const ThemeContext = createContext<ThemeContextProps | undefined>(undefined);
@@ -45,17 +46,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Apply theme on mount and whenever it changes
   useEffect(() => {
-    console.log("Applying theme:", theme);
-    console.log(
-      "HTML classes before:",
-      document.documentElement.classList.toString()
-    );
     applyTheme(theme);
     localStorage.setItem("theme", theme);
-    console.log(
-      "HTML classes after:",
-      document.documentElement.classList.toString()
-    );
   }, [theme]);
 
   const toggleTheme = () => {
@@ -67,8 +59,18 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
     });
   };
 
+  const setThemeExplicit = (nextTheme: Theme) => {
+    setTheme((currentTheme) => {
+      if (currentTheme === nextTheme) {
+        return currentTheme;
+      }
+      console.log("Forcing theme to:", nextTheme);
+      return nextTheme;
+    });
+  };
+
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme, toggleTheme, setThemeExplicit }}>
       {children}
     </ThemeContext.Provider>
   );
