@@ -44,6 +44,8 @@ import { useTheme } from "../context/ThemeContext";
 import { formatDate } from "../utils/formatters";
 import { getEventStatus } from "../utils/eventStatus";
 import EventForm from "./EventForm";
+import EventFeedback from "./EventFeedback";
+import FeedbackAnalytics from "./FeedbackAnalytics";
 
 // --- 💡 MOCK STRUCTURES (From your previous working code) ---
 // Define the roles explicitly for comparison
@@ -172,86 +174,26 @@ const StatCard: React.FC<any> = ({
   isPositive,
   icon,
   color,
-}) => {
-  const { theme } = useTheme();
-  
-  return (
-    <div 
-      className="rounded-xl p-6 flex items-start justify-between transition-all duration-300 hover:scale-105 cursor-pointer group"
-      style={{
-        background: theme === 'dark' 
-          ? 'linear-gradient(145deg, rgba(31, 41, 55, 0.8) 0%, rgba(17, 24, 39, 0.9) 100%)' 
-          : 'linear-gradient(145deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.8) 100%)',
-        boxShadow: theme === 'dark' 
-          ? '0 10px 25px rgba(0, 0, 0, 0.3), 0 4px 10px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)' 
-          : '0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1)',
-        border: `1px solid ${theme === 'dark' ? 'rgba(55, 65, 81, 0.5)' : 'rgba(229, 231, 235, 0.5)'}`,
-        backdropFilter: 'blur(10px)'
-      }}
-      onMouseEnter={(e) => {
-        if (theme === 'dark') {
-          e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.4), 0 8px 16px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15)';
-        } else {
-          e.currentTarget.style.boxShadow = '0 10px 25px rgba(0, 0, 0, 0.1), 0 4px 10px rgba(0, 0, 0, 0.05)';
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (theme === 'dark') {
-          e.currentTarget.style.boxShadow = '0 10px 25px rgba(0, 0, 0, 0.3), 0 4px 10px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
-        } else {
-          e.currentTarget.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1)';
-        }
-      }}
-    >
-      <div>
-        <p 
-          className="text-sm font-medium mb-1"
-          style={{
-            color: theme === 'dark' ? '#9ca3af' : '#6b7280'
-          }}
+}) => (
+  <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex items-start justify-between">
+    <div>
+      <p className="text-sm font-medium text-gray-500 mb-1">{title}</p>
+      <h3 className="text-2xl font-bold text-gray-900">{value}</h3>
+      {change && (
+        <p
+          className={`text-xs mt-2 font-medium ${
+            isPositive ? "text-green-600" : "text-red-600"
+          }`}
         >
-          {title}
+          {isPositive ? "+" : ""}
+          {change}{" "}
+          <span className="text-gray-400 font-normal">vs last month</span>
         </p>
-        <h3 
-          className="text-2xl font-bold"
-          style={{
-            color: theme === 'dark' ? '#ffffff' : '#111827'
-          }}
-        >
-          {value}
-        </h3>
-        {change && (
-          <p
-            className={`text-xs mt-2 font-medium ${
-              isPositive ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
-            }`}
-          >
-            {isPositive ? "+" : ""}
-            {change}{" "}
-            <span 
-              className="font-normal"
-              style={{
-                color: theme === 'dark' ? '#6b7280' : '#9ca3af'
-              }}
-            >
-              vs last month
-            </span>
-          </p>
-        )}
-      </div>
-      <div 
-        className={`p-3 rounded-lg text-white transition-all duration-300 group-hover:scale-110 ${color}`}
-        style={{
-          boxShadow: theme === 'dark' 
-            ? '0 4px 8px rgba(0, 0, 0, 0.3)' 
-            : '0 2px 4px rgba(0, 0, 0, 0.1)'
-        }}
-      >
-        {icon}
-      </div>
+      )}
     </div>
-  );
-};
+    <div className={`p-3 rounded-lg ${color} text-white`}>{icon}</div>
+  </div>
+);
 
 export function Dashboard({
   user,
@@ -560,6 +502,7 @@ export function Dashboard({
     "User Management",
     "Event Management",
     "Registrations",
+    "Feedback Analytics",
     "Admin Logs",
   ];
   const studentTabs = ["Overview", "Discover Events", "My Events"];
@@ -570,6 +513,7 @@ export function Dashboard({
     "user management",
     "event management",
     "registrations",
+    "feedback analytics",
     "admin logs",
     "my events",
   ].includes(activeTab);
@@ -583,22 +527,22 @@ export function Dashboard({
     events: any[];
     limit?: number;
   }) => (
-    <div className="dashboard-card rounded-xl shadow-sm overflow-hidden">
-      <div className="px-6 py-4 dashboard-card-header flex justify-between items-center">
-        <h3 className="font-semibold">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+        <h3 className="font-semibold text-gray-900">
           {activeTab === "event management"
             ? "Event Management"
             : "Recent Events"}
         </h3>
         {isAdmin && activeTab === "event management" && (
-          <button className="text-sm dashboard-link hover:text-indigo-700 font-medium">
+          <button className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
             Approve Pending Flagged Events
           </button>
         )}
         {!isAdmin && activeTab !== "event management" && (
           <button
             onClick={() => setCurrentPage("discover")}
-            className="text-sm dashboard-link font-medium"
+            className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
           >
             View All
           </button>
@@ -606,7 +550,7 @@ export function Dashboard({
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left">
-          <thead className="text-xs uppercase dashboard-table-header">
+          <thead className="text-xs text-gray-500 uppercase bg-gray-50/50">
             <tr>
               <th className="px-6 py-3 font-medium">Event Name</th>
               <th className="px-6 py-3 font-medium">Category</th>
@@ -621,9 +565,9 @@ export function Dashboard({
             {eventList.slice(0, limit || eventList.length).map((event) => (
               <tr
                 key={event._id || event.id}
-                className="dashboard-table-row transition-colors"
+                className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors"
               >
-                <td className="px-6 py-4 font-medium dashboard-card-header">
+                <td className="px-6 py-4 font-medium text-gray-900">
                   <div className="flex items-center">
                     <div className="w-8 h-8 rounded bg-indigo-100 text-indigo-600 flex items-center justify-center mr-3">
                       <Calendar className="w-4 h-4" />
@@ -632,18 +576,18 @@ export function Dashboard({
                       <div className="font-medium line-clamp-1">
                         {event.title}
                       </div>
-                      <div className="text-xs dashboard-card-text line-clamp-1">
+                      <div className="text-xs text-gray-500 line-clamp-1">
                         {event.location}
                       </div>
                     </div>
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <span className="px-2.5 py-1 rounded-full text-xs font-medium dashboard-badge capitalize">
+                  <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 capitalize">
                     {event.category}
                   </span>
                 </td>
-                <td className="px-6 py-4 dashboard-card-text">
+                <td className="px-6 py-4 text-gray-500">
                   {formatDate(event.startDate)}
                 </td>
                 <td className="px-6 py-4">
@@ -693,16 +637,16 @@ export function Dashboard({
   );
 
   const UserActivityTable = () => (
-    <div className="dashboard-card rounded-xl shadow-sm overflow-hidden">
-      <div className="px-6 py-4 dashboard-card-header flex justify-between items-center">
-        <h3 className="font-semibold">User Activity</h3>
-        <button className="text-sm dashboard-link font-medium">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+        <h3 className="font-semibold text-gray-900">User Activity</h3>
+        <button className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
           View All Users
         </button>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left">
-          <thead className="text-xs dashboard-table-header uppercase">
+          <thead className="text-xs text-gray-500 uppercase bg-gray-50/50">
             <tr>
               <th className="px-6 py-3 font-medium">User</th>
               <th className="px-6 py-3 font-medium">Role</th>
@@ -718,9 +662,9 @@ export function Dashboard({
             {allUsers.map((u) => (
               <tr
                 key={u.id}
-                className="dashboard-table-row transition-colors"
+                className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors"
               >
-                <td className="px-6 py-4 font-medium dashboard-card-header">
+                <td className="px-6 py-4 font-medium text-gray-900">
                   <div className="flex items-center gap-3">
                     <div
                       className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold uppercase ${
@@ -747,10 +691,10 @@ export function Dashboard({
                     {u.role}
                   </span>
                 </td>
-                <td className="px-6 py-4 dashboard-card-text">
+                <td className="px-6 py-4 text-gray-500">
                   {u.university || "-"}
                 </td>
-                <td className="px-6 py-4 dashboard-card-text">
+                <td className="px-6 py-4 text-gray-500">
                   {u.lastActive || "Never"}
                 </td>
                 <td className="px-6 py-4">
@@ -790,16 +734,16 @@ export function Dashboard({
     registrations: any[];
     showAdminActions?: boolean;
   }) => (
-    <div className="dashboard-card rounded-xl shadow-sm overflow-hidden">
-      <div className="px-6 py-4 dashboard-card-header flex justify-between items-center">
-        <h3 className="font-semibold">Event Registrations</h3>
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+        <h3 className="font-semibold text-gray-900">Event Registrations</h3>
         <div className="flex gap-2">
-          <button className="p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+          <button className="p-1.5 text-gray-500 hover:bg-gray-100 rounded-lg">
             <Filter className="w-4 h-4" />
           </button>
           <button
             onClick={handleExportData}
-            className="text-sm dashboard-link font-medium"
+            className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
           >
             Export CSV
           </button>
@@ -807,7 +751,7 @@ export function Dashboard({
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left">
-          <thead className="text-xs dashboard-table-header uppercase">
+          <thead className="text-xs text-gray-500 uppercase bg-gray-50/50">
             <tr>
               <th className="px-6 py-3 font-medium">Student</th>
               <th className="px-6 py-3 font-medium">Event</th>
@@ -819,81 +763,91 @@ export function Dashboard({
           <tbody>
             {regList.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-6 py-8 text-center dashboard-card-text">
+                <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
                   No registrations found.
                 </td>
               </tr>
             ) : (
               regList.map((reg) => (
-                <tr
-                  key={reg._id} // 🔑 Changed from reg.id to reg._id
-                  className="dashboard-table-row transition-colors"
-                >
-                  <td className="px-6 py-4 font-medium dashboard-card-header">
-                    {/* 🔑 Logic: Get name from populated student object */}
-                    {reg.student?.fullName || "User"}
-                  </td>
-                  <td className="px-6 py-4 dashboard-card-text">
-                    {/* 🔑 Logic: Get title from populated event object */}
-                    {reg.event?.title || "Event Details"}
-                  </td>
-                  <td className="px-6 py-4 dashboard-card-text">
-                    {/* 🔑 Logic: Use appliedAt date from DB */}
-                    {formatDate(reg.appliedAt || reg.createdAt)}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize ${
-                        reg.status === "approved"
-                          ? "bg-green-100 text-green-700"
-                          : reg.status === "rejected"
-                          ? "bg-red-100 text-red-700"
-                          : "bg-yellow-100 text-yellow-700"
-                      }`}
-                    >
-                      {reg.status}
-                    </span>
-                  </td>
+                <React.Fragment key={reg._id}>
+                  <tr className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                    <td className="px-6 py-4 font-medium text-gray-900">
+                      {/* 🔑 Logic: Get name from populated student object */}
+                      {reg.student?.fullName || "User"}
+                    </td>
+                    <td className="px-6 py-4 text-gray-600">
+                      {/* 🔑 Logic: Get title from populated event object */}
+                      {reg.event?.title || "Event Details"}
+                    </td>
+                    <td className="px-6 py-4 text-gray-500">
+                      {/* 🔑 Logic: Use appliedAt date from DB */}
+                      {formatDate(reg.appliedAt || reg.createdAt)}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize ${
+                          reg.status === "approved"
+                            ? "bg-green-100 text-green-700"
+                            : reg.status === "rejected"
+                            ? "bg-red-100 text-red-700"
+                            : "bg-yellow-100 text-yellow-700"
+                        }`}
+                      >
+                        {reg.status}
+                      </span>
+                    </td>
 
-                  <td className="px-6 py-4 text-right">
-                    {showAdminActions && reg.status === "pending" ? (
-                      <div className="flex justify-end gap-2">
-                        <button
-                          onClick={() =>
-                            handleUpdateRegistrationStatus(reg._id, "approved")
-                          }
-                          className="p-1 text-green-600 hover:bg-green-50 rounded"
-                          title="Approve"
-                        >
-                          <Check className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() =>
-                            handleUpdateRegistrationStatus(reg._id, "rejected")
-                          }
-                          className="p-1 text-red-600 hover:bg-red-50 rounded"
-                          title="Reject"
-                        >
-                          <XIcon className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ) : showAdminActions ? (
-                      <div className="text-xs text-gray-400 italic">
-                        Processed
-                      </div>
-                    ) : reg.status === "pending" ? (
-                      <div className="text-xs text-yellow-600 font-medium italic">
-                        Waiting...
-                      </div>
-                    ) : (
-                      <div className="text-xs dashboard-card-text font-medium">
-                        {getCollegeName(
-                          reg.eventId || reg.event?._id || reg.event?.id
-                        )}
-                      </div>
-                    )}
-                  </td>
-                </tr>
+                    <td className="px-6 py-4 text-right">
+                      {showAdminActions && reg.status === "pending" ? (
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() =>
+                              handleUpdateRegistrationStatus(reg._id, "approved")
+                            }
+                            className="p-1 text-green-600 hover:bg-green-50 rounded"
+                            title="Approve"
+                          >
+                            <Check className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() =>
+                              handleUpdateRegistrationStatus(reg._id, "rejected")
+                            }
+                            className="p-1 text-red-600 hover:bg-red-50 rounded"
+                            title="Reject"
+                          >
+                            <XIcon className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : showAdminActions ? (
+                        <div className="text-xs text-gray-400 italic">
+                          Processed
+                        </div>
+                      ) : reg.status === "pending" ? (
+                        <div className="text-xs text-yellow-600 font-medium italic">
+                          Waiting...
+                        </div>
+                      ) : (
+                        <div className="text-xs text-gray-600 font-medium">
+                          {getCollegeName(
+                            reg.eventId || reg.event?._id || reg.event?.id
+                          )}
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                  {/* Add feedback component for approved student registrations */}
+                  {!showAdminActions && reg.status === "approved" && (
+                    <tr className="bg-gray-50">
+                      <td colSpan={5} className="px-6 py-4">
+                        <EventFeedback
+                          eventId={reg.event?._id || reg.eventId}
+                          disabled={false}
+                        />
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
               ))
             )}
           </tbody>
@@ -903,16 +857,16 @@ export function Dashboard({
   );
 
   const AdminLogsTable = () => (
-    <div className="dashboard-card rounded-xl shadow-sm overflow-hidden">
-      <div className="px-6 py-4 dashboard-card-header flex justify-between items-center">
-        <h3 className="font-semibold">System Logs</h3>
-        <button className="text-sm dashboard-link font-medium flex items-center gap-1">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+        <h3 className="font-semibold text-gray-900">System Logs</h3>
+        <button className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">
           <Download className="w-4 h-4" /> Download
         </button>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left">
-          <thead className="text-xs dashboard-table-header uppercase">
+          <thead className="text-xs text-gray-500 uppercase bg-gray-50/50">
             <tr>
               <th className="px-6 py-3 font-medium">Timestamp</th>
               <th className="px-6 py-3 font-medium">Admin</th>
@@ -924,23 +878,23 @@ export function Dashboard({
             {adminLogs.map((log) => (
               <tr
                 key={log.id}
-                className="dashboard-table-row transition-colors"
+                className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors"
               >
-                <td className="px-6 py-4 dashboard-card-text whitespace-nowrap">
+                <td className="px-6 py-4 text-gray-500 whitespace-nowrap">
                   <div className="flex items-center">
-                    <Clock className="w-3 h-3 mr-2 text-gray-400 dark:text-gray-500" />
+                    <Clock className="w-3 h-3 mr-2 text-gray-400" />
                     {formatDate(log.timestamp)}
                   </div>
                 </td>
-                <td className="px-6 py-4 font-medium dashboard-card-header">
+                <td className="px-6 py-4 font-medium text-gray-900">
                   {getAdminName(log.userId)}
                 </td>
                 <td className="px-6 py-4">
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium dashboard-badge">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
                     {log.action}
                   </span>
                 </td>
-                <td className="px-6 py-4 dashboard-card-text max-w-xs truncate">
+                <td className="px-6 py-4 text-gray-600 max-w-xs truncate">
                   {log.details}
                 </td>
               </tr>
@@ -955,66 +909,38 @@ export function Dashboard({
 
   return (
     <>
-      <div className="dashboard-layout min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="dashboard-layout flex h-screen bg-gray-50 dark:bg-gray-900">
         {/* 1. Sidebar Navigation */}
         <aside
           className={`
-                 shadow-2xl flex flex-col 
-                transition-all duration-300 ease-in-out z-50 h-screen overflow-hidden
-                fixed top-0 left-0
+                 dark:bg-gray-800 shadow-2xl flex flex-col justify-between 
+                transition-all duration-300 ease-in-out z-50 
                 ${isCollapsed ? "w-20" : "w-64"}
             `}
           onMouseEnter={() => setIsCollapsed(false)}
           onMouseLeave={() => setIsCollapsed(true)}
         >
-          {/* Fixed header section */}
-          <div className="logo-section px-3 pt-5 pb-4 shrink-0">
-            {/* User Profile Section */}
-            <div className="flex items-center justify-center mb-4">
-              <div className="w-12 h-12 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                {user.fullName.charAt(0).toUpperCase()}
-              </div>
+          <div className="flex flex-col h-full">
+            <div className="logo-section px-3 pt-5 pb-8 overflow-hidden">
+              <h1
+                className={`font-extrabold text-xl text-indigo-700 dark:text-indigo-400 whitespace-nowrap 
+                                    ${
+                                      isCollapsed
+                                        ? "opacity-0 h-0"
+                                        : "opacity-100 h-auto transition-opacity duration-300"
+                                    }`}
+              >
+                CampusEventHub
+              </h1>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 capitalize">
+                {user.role} Portal
+              </p>
+              {isCollapsed && (
+                <LayoutDashboard className="w-8 h-8 text-indigo-600 mx-auto" />
+              )}
             </div>
-            
-            <h1
-              className={`font-extrabold text-xl text-indigo-700 dark:text-indigo-400 whitespace-nowrap text-center
-                                  ${
-                                    isCollapsed
-                                      ? "opacity-0 h-0"
-                                      : "opacity-100 h-auto transition-opacity duration-300"
-                                  }`}
-            >
-              CampusEventHub
-            </h1>
-            
-            {/* Portal Status - Made bigger and more visible */}
-            <div className={`text-center mt-2 ${isCollapsed ? "opacity-0 h-0" : "opacity-100 h-auto transition-opacity duration-300"}`}>
-              <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${
-                user.role === 'admin' 
-                  ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-100' 
-                  : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100'
-              }`}>
-                {user.role === 'admin' ? 'Admin Portal' : 'Student Portal'}
-              </span>
-            </div>
-            
-            {/* Collapsed state - show full text */}
-            {isCollapsed && (
-              <div className="flex flex-col items-center mt-2">
-                <span className={`text-xs font-semibold ${
-                  user.role === 'admin' 
-                    ? 'text-purple-600 dark:text-purple-300' 
-                    : 'text-blue-600 dark:text-blue-300'
-                }`}>
-                  {user.role === 'admin' ? 'Admin' : 'Student'}
-                </span>
-              </div>
-            )}
-          </div>
 
-          {/* Scrollable navigation section */}
-          <div className={`flex-1 px-3 ${isCollapsed ? "overflow-hidden" : "overflow-y-auto"}`}>
-            <nav className="nav-menu space-y-2 pb-4">
+            <nav className="nav-menu space-y-2">
               {currentTabs.map((tab) => {
                 const tabLower = tab.toLowerCase();
                 return (
@@ -1045,55 +971,61 @@ export function Dashboard({
                   >
                     {tab === "Overview" ? (
                       <Home
-                        className={`${isCollapsed ? "w-6 h-6" : "w-5 h-5"} ${
+                        className={`w-5 h-5 ${
                           !isCollapsed ? "mr-3" : "mx-auto"
                         }`}
                       />
                     ) : tab === "Discover Events" ? (
                       <Compass
-                        className={`${isCollapsed ? "w-6 h-6" : "w-5 h-5"} ${
+                        className={`w-5 h-5 ${
                           !isCollapsed ? "mr-3" : "mx-auto"
                         }`}
                       /> // <-- NEW DISCOVER TAB
                     ) : tab === "My Events" || tab === "Event Management" ? (
                       <Calendar
-                        className={`${isCollapsed ? "w-6 h-6" : "w-5 h-5"} ${
+                        className={`w-5 h-5 ${
                           !isCollapsed ? "mr-3" : "mx-auto"
                         }`}
                       />
                     ) : tab === "User Management" ? (
                       <Users
-                        className={`${isCollapsed ? "w-6 h-6" : "w-5 h-5"} ${
+                        className={`w-5 h-5 ${
                           !isCollapsed ? "mr-3" : "mx-auto"
                         }`}
                       />
                     ) : tab === "Registrations" ? (
                       <ClipboardList
-                        className={`${isCollapsed ? "w-6 h-6" : "w-5 h-5"} ${
+                        className={`w-5 h-5 ${
+                          !isCollapsed ? "mr-3" : "mx-auto"
+                        }`}
+                      />
+                    ) : tab === "Feedback Analytics" ? (
+                      <BarChart
+                        className={`w-5 h-5 ${
                           !isCollapsed ? "mr-3" : "mx-auto"
                         }`}
                       />
                     ) : tab === "Analytics" ? (
                       <TrendingUp
-                        className={`${isCollapsed ? "w-6 h-6" : "w-5 h-5"} ${
+                        className={`w-5 h-5 ${
                           !isCollapsed ? "mr-3" : "mx-auto"
                         }`}
                       />
                     ) : tab === "Admin Logs" ? (
                       <FileText
-                        className={`${isCollapsed ? "w-6 h-6" : "w-5 h-5"} ${
+                        className={`w-5 h-5 ${
                           !isCollapsed ? "mr-3" : "mx-auto"
                         }`}
                       />
                     ) : tab === "Event Management" ? (
                       <Activity
-                        className={`${isCollapsed ? "w-6 h-6" : "w-5 h-5"} ${
+                        className={`w-5 h-5 ${
                           !isCollapsed ? "mr-3" : "mx-auto"
                         }`}
                       />
                     ) : (
                       <Settings
-                        className={`${isCollapsed ? "w-6 h-6" : "w-5 h-5"} ${
+                        className={`w-5 h-5 ${
                           !isCollapsed ? "mr-3" : "mx-auto"
                         }`}
                       />
@@ -1112,33 +1044,90 @@ export function Dashboard({
             </nav>
           </div>
 
-          {/* Fixed bottom section with theme toggle and logout - always visible */}
-          <div className="shrink-0 p-3 border-t border-gray-200 dark:border-gray-700 space-y-2">
-            {/* Theme Toggle Button */}
+          {/* 🔑 NEW: Profile and Notification Icons (Always visible in collapsed state) */}
+          <div className="mt-auto px-2 py-4 border-t border-gray-200 dark:border-gray-700">
+            {/* 1. Notification Bell - The entire button is the hover group */}
             <button
-              onClick={toggleTheme}
-              className={`w-full flex items-center p-3 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors`}
+              className="group w-full flex items-center justify-center p-3 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors relative"
+              title="Notifications"
             >
-              {theme === "light" ? (
-                <Moon className={`${isCollapsed ? "w-6 h-6" : "w-5 h-5"} ${!isCollapsed ? "mr-3" : "mx-auto"}`} />
-              ) : (
-                <Sun className={`${isCollapsed ? "w-6 h-6" : "w-5 h-5"} text-yellow-400 ${!isCollapsed ? "mr-3" : "mx-auto"}`} />
-              )}
+              <Bell className="w-5 h-5 mx-auto" />
+              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
+
+              {/* 🔑 FIXED TOOLTIP VISIBILITY AND POSITIONING */}
               <span
-                className={`text-sm font-medium whitespace-nowrap ${
-                  isCollapsed ? "hidden" : ""
-                }`}
+                className={`
+                    whitespace-nowrap absolute z-50 
+                    
+                    /* Positioning: Pin to the right of the sidebar's 5rem (w-20) width */
+                    left-full top-1/2 -translate-y-1/2 ml-2 
+
+                    /* Appearance: HIDDEN by default (opacity-0) */
+                    bg-gray-900 text-white text-xs px-2 py-1 rounded shadow-lg 
+                    opacity-0 
+                    
+                    /* 🚨 CRITICAL FIX: Only show text on HOVER AND when the sidebar IS collapsed */
+                    ${isCollapsed ? "group-hover:opacity-100" : "hidden"} 
+                    
+                    transition-opacity duration-300 pointer-events-none
+                `}
               >
-                {theme === "light" ? "Dark Mode" : "Light Mode"}
+                3 New Alerts
               </span>
             </button>
 
-            {/* Logout Button - Always easily accessible */}
+            {/* 2. Profile Icon/Picture */}
+            <div className="w-full mt-2 flex justify-center">
+              {isCollapsed ? (
+                // Collapsed State: Shows Initial/Generic Icon
+                <div className="w-6 h-6 rounded-full bg-indigo-200 dark:bg-indigo-700 flex items-center justify-center text-indigo-800 dark:text-white font-bold text-sm">
+                  {/* Shows first initial of user name */}
+                  {user.fullName.charAt(0)}
+                </div>
+              ) : (
+                // Expanded State: Shows Name and Role (Optional: This is the old logout/profile area replacement)
+                <div className="flex items-center gap-3 w-full p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <User className="w-5 h-5 text-indigo-600 dark:text-white" />
+                  <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                    {user.fullName}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+            {/* Theme Toggle Button */}
+            <button
+              onClick={toggleTheme}
+              className="w-full flex items-center justify-between p-3 mb-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            >
+              <span className="flex items-center gap-3">
+                {theme === "light" ? (
+                  <Moon className="w-5 h-5" />
+                ) : (
+                  <Sun className="w-5 h-5 text-yellow-400" />
+                )}
+                <span
+                  className={`text-sm font-medium whitespace-nowrap ${
+                    isCollapsed ? "hidden" : ""
+                  }`}
+                >
+                  {theme === "light" ? "Dark Mode" : "Light Mode"}
+                </span>
+              </span>
+            </button>
+            {/* Logout Button */}
+
             <button
               onClick={handleLogout}
-              className={`w-full flex items-center p-3 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors font-medium`}
+              className="w-full flex items-center justify-start p-3 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors font-medium"
             >
-              <LogOut className={`${isCollapsed ? "w-6 h-6" : "w-5 h-5"} ${!isCollapsed ? "mr-3" : "mx-auto"}`} />
+              {" "}
+              <LogOut className="w-5 h-5 mr-3" />
+              <span
+                className={`w-5 h-5 ${!isCollapsed ? "mr-3" : "mx-auto"}`}
+              ></span>
+              {/* Text hides */}
               <span
                 className={`whitespace-nowrap ${isCollapsed ? "hidden" : ""}`}
               >
@@ -1148,104 +1137,43 @@ export function Dashboard({
           </div>
         </aside>
         {/* 2. Main Content Area */}
-        <main 
-          className={`main-content flex-1 min-h-screen overflow-y-auto ${isCollapsed ? "ml-20" : "ml-64"} transition-all duration-300`}
-          style={{
-            background: theme === 'dark' 
-              ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #111827 100%)' 
-              : 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%)'
-          }}
-        >
-          <div className="p-8 min-h-full relative">
-            {/* Background gradient overlay */}
-            <div 
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                background: theme === 'dark' 
-                  ? 'radial-gradient(ellipse at top right, rgba(79, 70, 229, 0.15) 0%, transparent 50%)' 
-                  : 'radial-gradient(ellipse at top right, rgba(79, 70, 229, 0.08) 0%, transparent 50%)'
-              }}
-            />
-            <div className="space-y-6 relative z-10">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                {/* Header/Greeting */}
-                <div>
-                  <h1 className="text-2xl font-bold inline-block px-4 py-2">
-                    👋 {isAdmin ? "Admin Dashboard" : "My Dashboard"}
-                  </h1>
-                  <p className="text-gray-500 text-sm mt-1">
-                    {isAdmin
-                      ? "Manage platform, events, and monitor performance"
-                      : `Welcome back, ${user.fullName}!`}
-                  </p>
-                </div>
-                {/* Action Buttons */}
-                <div className="flex gap-2">
-                  {isAdmin && (
-                    <button
-                      onClick={onCreateEventClick}
-                      className="flex items-center gap-2 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-105"
-                      style={{
-                        background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
-                        boxShadow: theme === 'dark' 
-                          ? '0 4px 8px rgba(79, 70, 229, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2)' 
-                          : '0 2px 4px rgba(79, 70, 229, 0.2), 0 1px 2px rgba(0, 0, 0, 0.1)'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'linear-gradient(135deg, #4338ca 0%, #6d28d9 100%)';
-                        e.currentTarget.style.boxShadow = theme === 'dark' 
-                          ? '0 8px 16px rgba(79, 70, 229, 0.4), 0 4px 8px rgba(0, 0, 0, 0.3)' 
-                          : '0 4px 8px rgba(79, 70, 229, 0.3), 0 2px 4px rgba(0, 0, 0, 0.15)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)';
-                        e.currentTarget.style.boxShadow = theme === 'dark' 
-                          ? '0 4px 8px rgba(79, 70, 229, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2)' 
-                          : '0 2px 4px rgba(79, 70, 229, 0.2), 0 1px 2px rgba(0, 0, 0, 0.1)';
-                      }}
-                    >
-                      <Plus className="w-4 h-4" />
-                      Create New Event
-                    </button>
-                  )}
-                  {isAdmin && (
-                    <>
-                      <button 
-                        className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-105"
-                        style={{
-                          background: theme === 'dark' 
-                            ? 'linear-gradient(135deg, rgba(55, 65, 81, 0.8) 0%, rgba(75, 85, 99, 0.6) 100%)' 
-                            : 'linear-gradient(135deg, rgba(249, 250, 251, 0.9) 0%, rgba(243, 244, 246, 0.7) 100%)',
-                          color: theme === 'dark' ? '#d1d5db' : '#374151',
-                          boxShadow: theme === 'dark' 
-                            ? '0 2px 4px rgba(0, 0, 0, 0.2)' 
-                            : '0 1px 3px rgba(0, 0, 0, 0.1)',
-                          border: `1px solid ${theme === 'dark' ? 'rgba(75, 85, 99, 0.5)' : 'rgba(209, 213, 219, 0.5)'}`
-                        }}
-                      >
-                        <Filter className="w-4 h-4" /> Filter
-                      </button>
-                      <button 
-                        className="flex items-center gap-2 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-105"
-                        style={{
-                          background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
-                          boxShadow: theme === 'dark' 
-                            ? '0 4px 8px rgba(5, 150, 105, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2)' 
-                            : '0 2px 4px rgba(5, 150, 105, 0.2), 0 1px 2px rgba(0, 0, 0, 0.1)'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background = 'linear-gradient(135deg, #047857 0%, #065f46 100%)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = 'linear-gradient(135deg, #059669 0%, #047857 100%)';
-                        }}
-                      >
-                        <Shield className="w-4 h-4" /> Security
-                      </button>
-                    </>
-                  )}
-                </div>
+        <main className="main-content flex-1 p-8 overflow-y-auto">
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              {/* Header/Greeting */}
+              <div>
+                <h1 className="text-2xl font-bold inline-block px-4 py-2">
+                  👋 {isAdmin ? "Admin Dashboard" : "My Dashboard"}
+                </h1>
+                <p className="text-gray-500 text-sm mt-1">
+                  {isAdmin
+                    ? "Manage platform, events, and monitor performance"
+                    : `Welcome back, ${user.fullName}!`}
+                </p>
               </div>
+              {/* Action Buttons */}
+              <div className="flex gap-2">
+                {isAdmin && (
+                  <button
+                    onClick={onCreateEventClick}
+                    className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm text-sm font-medium"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Create New Event
+                  </button>
+                )}
+                {isAdmin && (
+                  <>
+                    <button className="flex items-center gap-2 bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors shadow-sm text-sm font-medium">
+                      <Filter className="w-4 h-4" /> Filter
+                    </button>
+                    <button className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm text-sm font-medium">
+                      <Shield className="w-4 h-4" /> Security
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
 
             {/* Tabs Navigation (Matches the component logic) */}
             <div className="border-b border-gray-200">
@@ -1282,86 +1210,10 @@ export function Dashboard({
               </nav>
             </div>
 
-            {/* Stats Grid - Always visible on Overview, maybe modified for others */}
-            {!children && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard
-                  title={
-                    isStudent
-                      ? "Events Registered"
-                      : isAdmin
-                      ? "Events Registered"
-                      : "Total Events"
-                  }
-                  value={events.length}
-                  //value={isStudent ? registrations.length : events.length}//
-                  change="12%"
-                  isPositive={true}
-                  icon={<Calendar className="w-5 h-5" />}
-                  color="bg-blue-500"
-                />
-                <StatCard
-                  title={isAdmin ? "My College Events" : "Upcoming Events"}
-                  value={
-                    isAdmin
-                      ? adminOwnedEvents.length
-                      : events.filter(
-                          (e) =>
-                            getEventStatus(e.startDate, e.endDate) ===
-                            "upcoming"
-                        ).length
-                  }
-                  change="8%"
-                  isPositive={true}
-                  icon={
-                    isAdmin ? (
-                      <Calendar className="w-5 h-5" />
-                    ) : (
-                      <Activity className="w-5 h-5" />
-                    )
-                  }
-                  color="bg-green-500"
-                />
-                <StatCard
-                  title={
-                    isStudent ? "Total Registrations" : "Total Participants"
-                  }
-                  value={
-                    isStudent
-                      ? registrations.length
-                      : adminOwnedRegistrations.length
-                  }
-                  change="23%"
-                  isPositive={true}
-                  icon={<TrendingUp className="w-5 h-5" />}
-                  color="bg-purple-500"
-                />
-                <StatCard
-                  title={isAdmin ? "Pending Reviews" : "Approved Events"}
-                  value={
-                    isAdmin
-                      ? adminOwnedRegistrations.filter(
-                          (r) => r.status === "pending"
-                        ).length
-                      : registrations.filter((r) => r.status === "approved")
-                          .length
-                  }
-                  change={isAdmin ? "-2%" : "0"}
-                  isPositive={isStudent ? true : false}
-                  icon={
-                    isAdmin ? (
-                      <AlertCircle className="w-5 h-5" />
-                    ) : (
-                      <CheckCircle className="w-5 h-5" />
-                    )
-                  }
-                  color={isStudent ? "bg-green-500" : "bg-orange-500"}
-                />
-              </div>
-            )}
+            {/* Stats Grid - Removed for cleaner dashboard */}
 
             {/* Main Content Sections */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-1">
               <div
                 className={`${
                   children
@@ -1380,25 +1232,8 @@ export function Dashboard({
                     {activeTab === "overview" && (
                       <>
                         {isAdmin && (
-                          <div 
-                            className="rounded-xl p-6 transition-all duration-300 hover:scale-[1.02]"
-                            style={{
-                              background: theme === 'dark' 
-                                ? 'linear-gradient(145deg, rgba(31, 41, 55, 0.8) 0%, rgba(17, 24, 39, 0.9) 100%)' 
-                                : 'linear-gradient(145deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.8) 100%)',
-                              boxShadow: theme === 'dark' 
-                                ? '0 10px 25px rgba(0, 0, 0, 0.3), 0 4px 10px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)' 
-                                : '0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1)',
-                              border: `1px solid ${theme === 'dark' ? 'rgba(55, 65, 81, 0.5)' : 'rgba(229, 231, 235, 0.5)'}`,
-                              backdropFilter: 'blur(10px)'
-                            }}
-                          >
-                            <h3 
-                              className="font-semibold mb-4"
-                              style={{
-                                color: theme === 'dark' ? '#ffffff' : '#111827'
-                              }}
-                            >
+                          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                            <h3 className="font-semibold text-gray-900 mb-4">
                               Registration Trends
                             </h3>
                             <div className="h-64 w-full">
@@ -1462,6 +1297,7 @@ export function Dashboard({
                         }
                       />
                     )}
+                    {activeTab === "feedback analytics" && <FeedbackAnalytics />}
                     {activeTab === "admin logs" && <AdminLogsTable />}
                     {activeTab === "my events" && (
                       <RegistrationsTable
@@ -1475,37 +1311,15 @@ export function Dashboard({
                       activeTab !== "user management" &&
                       activeTab !== "event management" &&
                       activeTab !== "registrations" &&
+                      activeTab !== "feedback analytics" &&
                       activeTab !== "admin logs" &&
                       activeTab !== "my events" && (
-                        <div 
-                          className="p-12 rounded-xl text-center transition-all duration-300 hover:scale-[1.02]"
-                          style={{
-                            background: theme === 'dark' 
-                              ? 'linear-gradient(145deg, rgba(31, 41, 55, 0.8) 0%, rgba(17, 24, 39, 0.9) 100%)' 
-                              : 'linear-gradient(145deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.8) 100%)',
-                            boxShadow: theme === 'dark' 
-                              ? '0 10px 25px rgba(0, 0, 0, 0.3), 0 4px 10px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)' 
-                              : '0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1)',
-                            border: `1px solid ${theme === 'dark' ? 'rgba(55, 65, 81, 0.5)' : 'rgba(229, 231, 235, 0.5)'}`,
-                            backdropFilter: 'blur(10px)'
-                          }}
-                        >
-                          <FileText className="w-12 h-12 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
-                          <h3 
-                            className="text-lg font-medium"
-                            style={{
-                              color: theme === 'dark' ? '#ffffff' : '#111827'
-                            }}
-                          >
+                        <div className="bg-white p-12 rounded-xl shadow-sm border border-gray-100 text-center text-gray-500">
+                          <FileText className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                          <h3 className="text-lg font-medium text-gray-900">
                             No content available
                           </h3>
-                          <p 
-                            style={{
-                              color: theme === 'dark' ? '#9ca3af' : '#6b7280'
-                            }}
-                          >
-                            This section is under development.
-                          </p>
+                          <p>This section is under development.</p>
                         </div>
                       )}
                   </>
@@ -1517,25 +1331,8 @@ export function Dashboard({
                 <div className="space-y-6">
                   {activeTab === "overview" ? (
                     <>
-                      <div 
-                        className="rounded-xl p-6 transition-all duration-300 hover:scale-[1.02]"
-                        style={{
-                          background: theme === 'dark' 
-                            ? 'linear-gradient(145deg, rgba(31, 41, 55, 0.8) 0%, rgba(17, 24, 39, 0.9) 100%)' 
-                            : 'linear-gradient(145deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.8) 100%)',
-                          boxShadow: theme === 'dark' 
-                            ? '0 10px 25px rgba(0, 0, 0, 0.3), 0 4px 10px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)' 
-                            : '0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1)',
-                          border: `1px solid ${theme === 'dark' ? 'rgba(55, 65, 81, 0.5)' : 'rgba(229, 231, 235, 0.5)'}`,
-                          backdropFilter: 'blur(10px)'
-                        }}
-                      >
-                        <h3 
-                          className="font-semibold mb-4"
-                          style={{
-                            color: theme === 'dark' ? '#ffffff' : '#111827'
-                          }}
-                        >
+                      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                        <h3 className="font-semibold text-gray-900 mb-4">
                           Quick Actions
                         </h3>
                         <div className="space-y-3">
@@ -1549,14 +1346,14 @@ export function Dashboard({
                           )}
                           <button
                             onClick={() => setActiveTab("my events")}
-                            className="w-full dashboard-button-secondary py-2 px-4 rounded-lg text-sm font-medium transition-colors"
+                            className="w-full bg-gray-50 text-gray-700 py-2 px-4 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors border border-gray-200"
                           >
                             View All Registrations
                           </button>
 
                           <button
                             onClick={handleExportData}
-                            className="w-full dashboard-button-secondary py-2 px-4 rounded-lg text-sm font-medium transition-colors"
+                            className="w-full bg-gray-50 text-gray-700 py-2 px-4 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors border border-gray-200"
                           >
                             Export Event Data
                           </button>
@@ -1564,49 +1361,32 @@ export function Dashboard({
                       </div>
 
                       {/* system full box  */}
-                      <div 
-                        className="rounded-xl p-6 transition-all duration-300 hover:scale-[1.02]"
-                        style={{
-                          background: theme === 'dark' 
-                            ? 'linear-gradient(145deg, rgba(31, 41, 55, 0.8) 0%, rgba(17, 24, 39, 0.9) 100%)' 
-                            : 'linear-gradient(145deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.8) 100%)',
-                          boxShadow: theme === 'dark' 
-                            ? '0 10px 25px rgba(0, 0, 0, 0.3), 0 4px 10px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)' 
-                            : '0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1)',
-                          border: `1px solid ${theme === 'dark' ? 'rgba(55, 65, 81, 0.5)' : 'rgba(229, 231, 235, 0.5)'}`,
-                          backdropFilter: 'blur(10px)'
-                        }}
-                      >
-                        <h3 
-                          className="font-semibold mb-4"
-                          style={{
-                            color: theme === 'dark' ? '#ffffff' : '#111827'
-                          }}
-                        >
+                      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                        <h3 className="font-semibold text-gray-900 mb-4">
                           System Health
                         </h3>
                         <div className="space-y-4">
                           <div className="flex justify-between items-center text-sm">
-                            <span className="dashboard-card-text">Server Status</span>
-                            <span className="text-green-600 dark:text-green-400 font-medium flex items-center gap-1">
+                            <span className="text-gray-500">Server Status</span>
+                            <span className="text-green-600 font-medium flex items-center gap-1">
                               <CheckCircle className="w-3 h-3" /> Healthy
                             </span>
                           </div>
                           <div className="flex justify-between items-center text-sm">
-                            <span className="dashboard-card-text">Database</span>
-                            <span className="text-green-600 dark:text-green-400 font-medium">
+                            <span className="text-gray-500">Database</span>
+                            <span className="text-green-600 font-medium">
                               Connected
                             </span>
                           </div>
                           <div className="flex justify-between items-center text-sm">
-                            <span className="dashboard-card-text">API Response</span>
-                            <span className="dashboard-card-header font-medium">
+                            <span className="text-gray-500">API Response</span>
+                            <span className="text-gray-900 font-medium">
                               152ms
                             </span>
                           </div>
                           <div className="flex justify-between items-center text-sm">
-                            <span className="dashboard-card-text">Uptime</span>
-                            <span className="dashboard-card-header font-medium">
+                            <span className="text-gray-500">Uptime</span>
+                            <span className="text-gray-900 font-medium">
                               99.9%
                             </span>
                           </div>
@@ -1614,33 +1394,11 @@ export function Dashboard({
                       </div>
                     </>
                   ) : (
-                    <div 
-                      className="rounded-xl p-6 transition-all duration-300 hover:scale-[1.02]"
-                      style={{
-                        background: theme === 'dark' 
-                          ? 'linear-gradient(145deg, rgba(31, 41, 55, 0.8) 0%, rgba(17, 24, 39, 0.9) 100%)' 
-                          : 'linear-gradient(145deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.8) 100%)',
-                        boxShadow: theme === 'dark' 
-                          ? '0 10px 25px rgba(0, 0, 0, 0.3), 0 4px 10px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)' 
-                          : '0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1)',
-                        border: `1px solid ${theme === 'dark' ? 'rgba(55, 65, 81, 0.5)' : 'rgba(229, 231, 235, 0.5)'}`,
-                        backdropFilter: 'blur(10px)'
-                      }}
-                    >
-                      <h3 
-                        className="font-semibold mb-4"
-                        style={{
-                          color: theme === 'dark' ? '#ffffff' : '#111827'
-                        }}
-                      >
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                      <h3 className="font-semibold text-gray-900 mb-4">
                         Information
                       </h3>
-                      <p 
-                        className="text-sm mb-4"
-                        style={{
-                          color: theme === 'dark' ? '#9ca3af' : '#6b7280'
-                        }}
-                      >
+                      <p className="text-sm text-gray-500 mb-4">
                         Select an item from the main list to view more details
                         here.
                       </p>
@@ -1649,7 +1407,6 @@ export function Dashboard({
                 </div>
               )}
             </div>
-          </div>
           </div>
         </main>
       </div>

@@ -325,7 +325,7 @@ export default function App() {
     // 🔑 Structural Fix: This is the outer component that holds everything
     <div
       className="relative min-h-screen 
-                       bg-gray-50 dark:bg-gray-900 
+                       bg-gray-100 dark:bg-gray-900 
                        text-gray-900 dark:text-white
                        transition-colors duration-300"
     >

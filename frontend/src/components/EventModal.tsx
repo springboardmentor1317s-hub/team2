@@ -56,7 +56,7 @@ const EventModal: React.FC<EventModalProps> = ({
           &#8203;
         </span>
 
-        <div className="inline-block align-bottom bg-white dark:bg-gray-800 rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl w-full">
+        <div className="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl w-full">
           <div className="relative h-64 sm:h-72">
             <img
               src={event.imageUrl}
@@ -65,40 +65,40 @@ const EventModal: React.FC<EventModalProps> = ({
             />
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 bg-white/90 dark:bg-gray-800/90 p-2 rounded-full hover:bg-white dark:hover:bg-gray-800 transition-colors text-gray-800 dark:text-gray-200"
+              className="absolute top-4 right-4 bg-white/90 p-2 rounded-full hover:bg-white transition-colors text-gray-800"
             >
               <X className="w-5 h-5" />
             </button>
             <div className="absolute bottom-4 left-4 flex gap-2">
-              <span className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-semibold text-indigo-600 dark:text-indigo-400 capitalize">
+              <span className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-semibold text-indigo-600 capitalize">
                 {event.category}
               </span>
-              <span className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-semibold text-gray-800 dark:text-gray-200 capitalize">
+              <span className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-semibold text-gray-800 capitalize">
                 {currentStatus}
               </span>
             </div>
           </div>
 
           <div className="px-6 py-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
               {event.title}
             </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+            <p className="text-sm text-gray-500 mb-6">
               Hosted by{" "}
-              <span className="font-semibold text-indigo-600 dark:text-indigo-400">
+              <span className="font-semibold text-indigo-600">
                 College ID: {event.collegeId}
               </span>
             </p>
 
             {/* Tabs */}
-            <div className="border-b border-gray-200 dark:border-gray-700 mb-6">
+            <div className="border-b border-gray-200 mb-6">
               <nav className="-mb-px flex space-x-8">
                 <button
                   onClick={() => setActiveTab("details")}
                   className={`whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm ${
                     activeTab === "details"
-                      ? "border-indigo-500 text-indigo-600 dark:text-indigo-400"
-                      : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600"
+                      ? "border-indigo-500 text-indigo-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                   }`}
                 >
                   Event Details
@@ -107,8 +107,8 @@ const EventModal: React.FC<EventModalProps> = ({
                   onClick={() => setActiveTab("comments")}
                   className={`whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm flex items-center ${
                     activeTab === "comments"
-                      ? "border-indigo-500 text-indigo-600 dark:text-indigo-400"
-                      : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600"
+                      ? "border-indigo-500 text-indigo-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                   }`}
                 >
                   Comments (0)
@@ -120,43 +120,43 @@ const EventModal: React.FC<EventModalProps> = ({
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex items-start">
-                    <Clock className="w-5 h-5 text-gray-400 dark:text-gray-500 mt-0.5 mr-3" />
+                    <Clock className="w-5 h-5 text-gray-400 mt-0.5 mr-3" />
                     <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      <p className="text-sm font-medium text-gray-900">
                         Start Time
                       </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                      <p className="text-sm text-gray-600">
                         {formatDate(event.startDate)}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-start">
-                    <Clock className="w-5 h-5 text-gray-400 dark:text-gray-500 mt-0.5 mr-3" />
+                    <Clock className="w-5 h-5 text-gray-400 mt-0.5 mr-3" />
                     <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      <p className="text-sm font-medium text-gray-900">
                         End Time
                       </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                      <p className="text-sm text-gray-600">
                         {formatDate(event.endDate)}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-start">
-                    <MapPin className="w-5 h-5 text-gray-400 dark:text-gray-500 mt-0.5 mr-3" />
+                    <MapPin className="w-5 h-5 text-gray-400 mt-0.5 mr-3" />
                     <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      <p className="text-sm font-medium text-gray-900">
                         Location
                       </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-300">{event.location}</p>
+                      <p className="text-sm text-gray-600">{event.location}</p>
                     </div>
                   </div>
                   <div className="flex items-start">
-                    <Users className="w-5 h-5 text-gray-400 dark:text-gray-500 mt-0.5 mr-3" />
+                    <Users className="w-5 h-5 text-gray-400 mt-0.5 mr-3" />
                     <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      <p className="text-sm font-medium text-gray-900">
                         Participants
                       </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                      <p className="text-sm text-gray-600">
                         {event.participantsCount} / {event.maxParticipants}
                       </p>
                     </div>
@@ -164,23 +164,23 @@ const EventModal: React.FC<EventModalProps> = ({
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
                     About Event
                   </h3>
-                  <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                  <p className="text-gray-600 leading-relaxed">
                     {event.description}
                   </p>
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-2">
                     Tags
                   </h3>
                   <div className="flex flex-wrap gap-2">
                     {event.tags.map((tag) => (
                       <span
                         key={tag}
-                        className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
+                        className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600"
                       >
                         #{tag}
                       </span>
@@ -189,10 +189,10 @@ const EventModal: React.FC<EventModalProps> = ({
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-2">
                     Requirements
                   </h3>
-                  <ul className="list-disc list-inside text-sm text-gray-600 dark:text-gray-300 space-y-1">
+                  <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
                     <li>Valid College ID Card</li>
                     <li>Registration confirmation email</li>
                     <li>Laptop (for technical events)</li>
@@ -200,19 +200,19 @@ const EventModal: React.FC<EventModalProps> = ({
                 </div>
               </div>
             ) : (
-              <div className="py-8 text-center text-gray-500 dark:text-gray-400">
-                <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
+              <div className="py-8 text-center text-gray-500">
+                <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-300" />
                 <p>No comments yet. Be the first to start the discussion!</p>
               </div>
             )}
           </div>
 
-          <div className="bg-gray-50 dark:bg-gray-700 px-6 py-4 flex items-center justify-between border-t border-gray-100 dark:border-gray-600">
+          <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-t border-gray-100">
             <div className="flex space-x-2">
-              <button className="p-2 text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-full transition-colors">
+              <button className="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors">
                 <Share2 className="w-5 h-5" />
               </button>
-              <button className="p-2 text-gray-500 dark:text-gray-400 hover:text-pink-600 dark:hover:text-pink-400 hover:bg-pink-50 dark:hover:bg-pink-900/30 rounded-full transition-colors">
+              <button className="p-2 text-gray-500 hover:text-pink-600 hover:bg-pink-50 rounded-full transition-colors">
                 <Heart className="w-5 h-5" />
               </button>
             </div>

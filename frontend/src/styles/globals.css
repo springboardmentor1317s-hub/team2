@@ -128,11 +128,6 @@
     @apply bg-background text-foreground;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    min-height: 100vh;
-  }
-
-  html {
-    min-height: 100vh;
   }
 }
 
@@ -193,20 +188,4 @@
 
 html {
   font-size: var(--font-size);
-}
-
-/* Additional fixes for white bar issue */
-#root {
-  min-height: 100vh;
-  background-color: var(--background);
-}
-
-/* Ensure consistent background when scrolling */
-html {
-  background-color: var(--background);
-}
-
-/* Fix for dashboard specific scrolling issues */
-.dashboard-layout {
-  background-color: var(--background);
 }

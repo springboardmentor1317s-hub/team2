@@ -30,7 +30,6 @@ const registrationSchema = new mongoose.Schema({
     type: Date,
     default: Date.now 
   },
-  
   reviewedAt: {
     type: Date
   }

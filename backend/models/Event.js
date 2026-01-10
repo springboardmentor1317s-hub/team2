@@ -68,11 +68,4 @@ const EventSchema = new mongoose.Schema({
     }
 });
 
-// Add indexes for better query performance
-EventSchema.index({ startDate: 1 });
-EventSchema.index({ category: 1 });
-EventSchema.index({ collegeName: 1 });
-EventSchema.index({ status: 1 });
-EventSchema.index({ createdAt: -1 });
-
 module.exports = mongoose.model('Event', EventSchema);

@@ -1,46 +1,18 @@
 const express = require('express');
 const Event = require('../models/Event');
-const User = require('../models/User');
 const { protect, isAdmin } = require('../middleware/auth');
-const NotificationService = require('../services/notificationService');
 
 const router = express.Router();
 
 // @route   GET /api/events
-// @desc    Get events with pagination
+// @desc    Get all events
 // @access  Public
 router.get('/', async (req, res) => {
-    const startTime = Date.now();
     try {
-        console.log('[Events API] Request received');
-        
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 20;
-        const skip = (page - 1) * limit;
-        
-        console.log(`[Events API] Querying DB - page: ${page}, limit: ${limit}`);
-        const queryStart = Date.now();
-        
-        // DON'T include imageUrl in list view - it's too large (base64 images)
-        const events = await Event.find()
-            .select('title collegeName category location startDate endDate status participantsCount maxParticipants')
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit)
-            .lean();
-            
-        console.log(`[Events API] Query completed in ${Date.now() - queryStart}ms`);
-        
-        const total = await Event.countDocuments();
-        
-        console.log(`[Events API] Total time: ${Date.now() - startTime}ms`);
-        
+        const events = await Event.find().sort({ createdAt: -1 }).lean();
         res.status(200).json({
             success: true,
             count: events.length,
-            total,
-            page,
-            pages: Math.ceil(total / limit),
             data: events
         });
 
@@ -49,33 +21,6 @@ router.get('/', async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Error fetching events'
-        });
-    }
-});
-
-// @route   GET /api/events/:id
-// @desc    Get single event with full details including image
-// @access  Public
-router.get('/:id', async (req, res) => {
-    try {
-        const event = await Event.findById(req.params.id).lean();
-        
-        if (!event) {
-            return res.status(404).json({
-                success: false,
-                message: 'Event not found'
-            });
-        }
-        
-        res.status(200).json({
-            success: true,
-            data: event
-        });
-    } catch (error) {
-        console.error('Get Event Error:', error.message);
-        res.status(500).json({
-            success: false,
-            message: 'Error fetching event'
         });
     }
 });
@@ -160,26 +105,12 @@ router.post('/', protect, isAdmin, async (req, res) => {
             description,
             maxParticipants: maxParticipants || 100,
             collegeId,
-            adminId: req.user.id,
+            adminId: req.user._id, // Use _id from Mongoose document
             imageUrl: imageUrl || `https://picsum.photos/seed/${Math.random()}/800/400`,
             participantsCount: 0,
             status: 'upcoming',
             tags: []
         });
-
-        // 🔥 AUTO-TRIGGER: Notify all students about new event
-        try {
-            // Get all student user IDs (you might want to filter by university/college)
-            const students = await User.find({ role: 'student' }).select('_id');
-            const studentIds = students.map(student => student._id);
-            
-            if (studentIds.length > 0) {
-                await NotificationService.notifyEventCreated(event, studentIds);
-            }
-        } catch (notificationError) {
-            console.error('Failed to send event created notifications:', notificationError);
-            // Don't fail event creation if notification fails
-        }
 
         res.status(201).json({
             success: true,
@@ -205,123 +136,65 @@ router.post('/', protect, isAdmin, async (req, res) => {
     }
 });
 
-module.exports = router;
-
 // @route   PUT /api/events/:id
-// @desc    Update an event
+// @desc    Update an existing event (admin-owned)
 // @access  Private (Admin only)
 router.put('/:id', protect, isAdmin, async (req, res) => {
     try {
-        const event = await Event.findById(req.params.id);
-        
+        const { id } = req.params;
+        const event = await Event.findById(id);
         if (!event) {
-            return res.status(404).json({
-                success: false,
-                message: 'Event not found'
-            });
+            return res.status(404).json({ success: false, message: 'Event not found' });
         }
 
-        // Check if admin owns this event
-        if (event.adminId.toString() !== req.user.id) {
-            return res.status(403).json({
-                success: false,
-                message: 'Not authorized to update this event'
-            });
+        // Ensure the authenticated admin owns this event
+        const ownsEvent = String(event.adminId) === String(req.user._id);
+        if (!ownsEvent) {
+            return res.status(403).json({ success: false, message: 'Not authorized to update this event' });
         }
 
-        // Update event
-        const updatedEvent = await Event.findByIdAndUpdate(
-            req.params.id,
-            req.body,
-            { new: true, runValidators: true }
-        );
+        const updatableFields = [
+            'title', 'collegeName', 'category', 'location', 'startDate', 'endDate',
+            'description', 'maxParticipants', 'imageUrl', 'status', 'tags'
+        ];
 
-        // 🔥 AUTO-TRIGGER: Notify registered students about event update
-        try {
-            const Registration = require('../models/Registration');
-            const registrations = await Registration.find({ 
-                event: req.params.id, 
-                status: 'approved' 
-            }).select('student');
-            
-            const registeredStudentIds = registrations.map(reg => reg.student);
-            
-            if (registeredStudentIds.length > 0) {
-                await NotificationService.notifyEventUpdated(updatedEvent, registeredStudentIds);
+        updatableFields.forEach((field) => {
+            if (req.body[field] !== undefined) {
+                event[field] = req.body[field];
             }
-        } catch (notificationError) {
-            console.error('Failed to send event updated notifications:', notificationError);
-        }
-
-        res.json({
-            success: true,
-            message: 'Event updated successfully',
-            data: updatedEvent
         });
 
+        await event.save();
+        return res.status(200).json({ success: true, message: 'Event updated successfully', data: event });
     } catch (error) {
         console.error('Update Event Error:', error.message);
-        res.status(500).json({
-            success: false,
-            message: 'Error updating event'
-        });
+        return res.status(500).json({ success: false, message: 'Error updating event' });
     }
 });
 
-// @route   PUT /api/events/:id/cancel
-// @desc    Cancel an event
+// @route   DELETE /api/events/:id
+// @desc    Delete an existing event (admin-owned)
 // @access  Private (Admin only)
-router.put('/:id/cancel', protect, isAdmin, async (req, res) => {
+router.delete('/:id', protect, isAdmin, async (req, res) => {
     try {
-        const event = await Event.findById(req.params.id);
-        
+        const { id } = req.params;
+        const event = await Event.findById(id);
         if (!event) {
-            return res.status(404).json({
-                success: false,
-                message: 'Event not found'
-            });
+            return res.status(404).json({ success: false, message: 'Event not found' });
         }
 
-        // Check if admin owns this event
-        if (event.adminId.toString() !== req.user.id) {
-            return res.status(403).json({
-                success: false,
-                message: 'Not authorized to cancel this event'
-            });
+        // Ensure the authenticated admin owns this event
+        const ownsEvent = String(event.adminId) === String(req.user._id);
+        if (!ownsEvent) {
+            return res.status(403).json({ success: false, message: 'Not authorized to delete this event' });
         }
 
-        // Update event status to cancelled
-        event.status = 'cancelled';
-        await event.save();
-
-        // 🔥 AUTO-TRIGGER: Notify registered students about event cancellation
-        try {
-            const Registration = require('../models/Registration');
-            const registrations = await Registration.find({ 
-                event: req.params.id, 
-                status: 'approved' 
-            }).select('student');
-            
-            const registeredStudentIds = registrations.map(reg => reg.student);
-            
-            if (registeredStudentIds.length > 0) {
-                await NotificationService.notifyEventCancelled(event, registeredStudentIds);
-            }
-        } catch (notificationError) {
-            console.error('Failed to send event cancelled notifications:', notificationError);
-        }
-
-        res.json({
-            success: true,
-            message: 'Event cancelled successfully',
-            data: event
-        });
-
+        await Event.deleteOne({ _id: id });
+        return res.status(200).json({ success: true, message: 'Event deleted successfully' });
     } catch (error) {
-        console.error('Cancel Event Error:', error.message);
-        res.status(500).json({
-            success: false,
-            message: 'Error cancelling event'
-        });
+        console.error('Delete Event Error:', error.message);
+        return res.status(500).json({ success: false, message: 'Error deleting event' });
     }
 });
+
+module.exports = router;

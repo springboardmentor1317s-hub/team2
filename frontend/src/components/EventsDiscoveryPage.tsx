@@ -3,7 +3,6 @@ import { Search, Filter, Loader2 } from "lucide-react";
 import { EventCard } from "./EventCard";
 import EventModal from "./EventModal";
 import { Event } from "../types";
-import { useTheme } from "../context/ThemeContext";
 
 interface EventsDiscoveryPageProps {
   initialEvents?: Event[];
@@ -12,8 +11,6 @@ interface EventsDiscoveryPageProps {
 export const EventsDiscoveryPage: React.FC<EventsDiscoveryPageProps> = ({
   initialEvents = [],
 }) => {
-  const { theme } = useTheme();
-  
   // --- STATE ---
   const [searchTerm, setSearchTerm] = useState("");
   const [events, setEvents] = useState<Event[]>(initialEvents);
@@ -174,153 +171,53 @@ export const EventsDiscoveryPage: React.FC<EventsDiscoveryPageProps> = ({
   // --- RENDER LOADING STATE ---
   if (loading) {
     return (
-      <div 
-        className="min-h-screen flex flex-col items-center justify-center"
-        style={{
-          background: theme === 'dark' 
-            ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #111827 100%)' 
-            : 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%)'
-        }}
-      >
-        <div 
-          className="p-8 rounded-2xl backdrop-blur-sm"
-          style={{
-            background: theme === 'dark' 
-              ? 'linear-gradient(145deg, rgba(31, 41, 55, 0.6) 0%, rgba(17, 24, 39, 0.8) 100%)' 
-              : 'linear-gradient(145deg, rgba(255, 255, 255, 0.8) 0%, rgba(248, 250, 252, 0.6) 100%)',
-            boxShadow: theme === 'dark' 
-              ? '0 20px 40px rgba(0, 0, 0, 0.3)' 
-              : '0 10px 25px rgba(0, 0, 0, 0.1)'
-          }}
-        >
-          <Loader2 className="w-12 h-12 text-indigo-500 animate-spin mb-4 mx-auto" />
-          <p 
-            className="font-medium text-center"
-            style={{
-              color: theme === 'dark' ? '#d1d5db' : '#6b7280'
-            }}
-          >
-            Fetching latest events...
-          </p>
-        </div>
+      <div className="min-h-screen bg-[#0f172a] flex flex-col items-center justify-center">
+        <Loader2 className="w-12 h-12 text-indigo-500 animate-spin mb-4" />
+        <p className="text-gray-400 font-medium">Fetching latest events...</p>
       </div>
     );
   }
 
   return (
-    <div 
-      className="discovery-page p-4 sm:p-8 min-h-screen"
-      style={{
-        background: theme === 'dark' 
-          ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #111827 100%)' 
-          : 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%)'
-      }}
-      data-theme={theme}
-    >
-      <div 
-        className="max-w-7xl mx-auto rounded-2xl p-6 sm:p-8 border backdrop-blur-sm"
-        style={{
-          background: theme === 'dark' 
-            ? 'linear-gradient(145deg, rgba(31, 41, 55, 0.8) 0%, rgba(17, 24, 39, 0.9) 100%)' 
-            : 'linear-gradient(145deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.8) 100%)',
-          borderColor: theme === 'dark' ? '#374151' : '#e2e8f0',
-          boxShadow: theme === 'dark' 
-            ? '0 25px 50px rgba(0, 0, 0, 0.4), 0 10px 20px rgba(0, 0, 0, 0.3)' 
-            : '0 20px 25px rgba(0, 0, 0, 0.1), 0 8px 10px rgba(0, 0, 0, 0.04)',
-          backdropFilter: 'blur(10px)'
-        }}
-        data-theme={theme}
-      >
-        <h1 
-          className="text-3xl sm:text-4xl font-extrabold mb-2"
-          style={{
-            color: theme === 'dark' ? '#ffffff' : '#111827'
-          }}
-        >
+    <div className="discovery-page p-4 sm:p-8 min-h-screen">
+      <div className="max-w-7xl mx-auto bg-white rounded-2xl p-6 sm:p-8 shadow-lg border border-gray-100">
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-2">
           Explore Campus Events
         </h1>
-        <p 
-          className="mb-8"
-          style={{
-            color: theme === 'dark' ? '#d1d5db' : '#6b7280'
-          }}
-        >
+        <p className="text-gray-600 mb-8">
           Find and register for the latest activities across the university.
         </p>
 
         {/* --- Search and Filter Bar --- */}
-        <div 
-          className="flex flex-col gap-4 mb-8 p-4 rounded-xl border backdrop-blur-sm"
-          style={{
-            background: theme === 'dark' 
-              ? 'linear-gradient(135deg, rgba(55, 65, 81, 0.6) 0%, rgba(75, 85, 99, 0.4) 100%)' 
-              : 'linear-gradient(135deg, rgba(249, 250, 251, 0.8) 0%, rgba(243, 244, 246, 0.6) 100%)',
-            borderColor: theme === 'dark' ? '#4b5563' : '#e2e8f0',
-            boxShadow: theme === 'dark' 
-              ? '0 8px 16px rgba(0, 0, 0, 0.2)' 
-              : '0 4px 6px rgba(0, 0, 0, 0.05)'
-          }}
-        >
+        <div className="flex flex-col gap-4 mb-8 bg-gray-50 p-4 rounded-xl border border-gray-200">
           <div className="flex flex-wrap gap-4 items-center w-full">
-            <div className="relative grow min-w-[250px]">
-              <Search 
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5"
-                style={{
-                  color: theme === 'dark' ? '#6b7280' : '#9ca3af'
-                }}
-              />
+            <div className="relative flex-grow min-w-[250px]">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search by title or category..."
-                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-                style={{
-                  backgroundColor: theme === 'dark' ? '#1f2937' : '#ffffff',
-                  borderColor: theme === 'dark' ? '#4b5563' : '#d1d5db',
-                  color: theme === 'dark' ? '#ffffff' : '#111827'
-                }}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-gray-900"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
 
             <div className="flex gap-2 items-center">
-              <label 
-                className="text-sm font-medium"
-                style={{
-                  color: theme === 'dark' ? '#d1d5db' : '#6b7280'
-                }}
-              >
-                Date
-              </label>
+              <label className="text-sm text-gray-600 font-medium">Date</label>
               <input
                 type="date"
-                className="border px-2 py-1 rounded-md"
-                style={{
-                  backgroundColor: theme === 'dark' ? '#1f2937' : '#ffffff',
-                  borderColor: theme === 'dark' ? '#4b5563' : '#d1d5db',
-                  color: theme === 'dark' ? '#ffffff' : '#111827'
-                }}
+                className="border px-2 py-1 rounded-md bg-white text-gray-900"
                 value={dateFilter}
                 onChange={(e) => setDateFilter(e.target.value)}
               />
             </div>
 
             <div className="flex gap-2 items-center">
-              <label 
-                className="text-sm font-medium"
-                style={{
-                  color: theme === 'dark' ? '#d1d5db' : '#6b7280'
-                }}
-              >
+              <label className="text-sm text-gray-600 font-medium">
                 College
               </label>
               <select
-                className="border px-2 py-1 rounded-md"
-                style={{
-                  backgroundColor: theme === 'dark' ? '#1f2937' : '#ffffff',
-                  borderColor: theme === 'dark' ? '#4b5563' : '#d1d5db',
-                  color: theme === 'dark' ? '#ffffff' : '#111827'
-                }}
+                className="border px-2 py-1 rounded-md bg-white text-gray-900"
                 value={collegeFilter}
                 onChange={(e) => setCollegeFilter(e.target.value)}
               >
@@ -335,10 +232,7 @@ export const EventsDiscoveryPage: React.FC<EventsDiscoveryPageProps> = ({
 
             <div className="flex gap-2 ml-auto">
               <button
-                className="flex items-center gap-2 text-white px-4 py-2 rounded-lg hover:bg-indigo-600 transition-colors text-sm font-medium"
-                style={{
-                  backgroundColor: theme === 'dark' ? '#4f46e5' : '#6366f1'
-                }}
+                className="flex items-center gap-2 bg-indigo-500 text-white px-4 py-2 rounded-lg hover:bg-indigo-600 transition-colors text-sm font-medium"
                 disabled
               >
                 <Filter className="w-4 h-4" />
@@ -346,11 +240,7 @@ export const EventsDiscoveryPage: React.FC<EventsDiscoveryPageProps> = ({
               </button>
 
               <button
-                className="flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm"
-                style={{
-                  backgroundColor: theme === 'dark' ? '#4b5563' : '#e5e7eb',
-                  color: theme === 'dark' ? '#e5e7eb' : '#374151'
-                }}
+                className="flex items-center gap-2 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors text-sm"
                 onClick={clearFilters}
               >
                 Clear
@@ -372,32 +262,13 @@ export const EventsDiscoveryPage: React.FC<EventsDiscoveryPageProps> = ({
             ))}
           </div>
         ) : (
-          <div 
-            className="text-center p-12 rounded-xl border-2 border-dashed backdrop-blur-sm"
-            style={{
-              background: theme === 'dark' 
-                ? 'linear-gradient(135deg, rgba(55, 65, 81, 0.4) 0%, rgba(75, 85, 99, 0.2) 100%)' 
-                : 'linear-gradient(135deg, rgba(249, 250, 251, 0.6) 0%, rgba(243, 244, 246, 0.4) 100%)',
-              borderColor: theme === 'dark' ? '#4b5563' : '#d1d5db',
-              boxShadow: theme === 'dark' 
-                ? '0 8px 16px rgba(0, 0, 0, 0.2)' 
-                : '0 4px 6px rgba(0, 0, 0, 0.05)'
-            }}
-          >
-            <h3 
-              className="text-xl font-semibold"
-              style={{
-                color: theme === 'dark' ? '#d1d5db' : '#6b7280'
-              }}
-            >
+          <div className="text-center p-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+            <h3 className="text-xl font-semibold text-gray-500">
               No Events Found Matching Your Criteria
             </h3>
             <button
               onClick={clearFilters}
-              className="mt-4 font-medium hover:underline transition-colors duration-200"
-              style={{
-                color: theme === 'dark' ? '#818cf8' : '#4f46e5'
-              }}
+              className="mt-4 text-indigo-600 font-medium hover:underline"
             >
               Reset all filters
             </button>
