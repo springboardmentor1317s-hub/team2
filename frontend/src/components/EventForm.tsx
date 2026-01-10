@@ -9,11 +9,6 @@ import {
   Image as ImageIcon,
 } from "lucide-react";
 import { Event } from "../types";
-import sportsBanner from "../public/banners/sports.png";
-import hackathonBanner from "../public/banners/hackathon.png";
-import workshopBanner from "../public/banners/workshop.png";
-import culturalBanner from "../public/banners/cultural.png";
-import otherbanner from "../public/banners/other.png";
 import EventFeedbackAdmin from "./EventFeedbackAdmin";
 
 interface EventFormProps {
@@ -26,11 +21,11 @@ interface EventFormProps {
 
 // 🔑 High-quality thematic mapping for auto-generated banners
 const CATEGORY_IMAGES: Record<string, string> = {
-  cultural: culturalBanner,
-  sports: sportsBanner,
-  hackathon: hackathonBanner,
-  workshop: workshopBanner,
-  other: otherbanner,
+  cultural: "/src/public/banners/cultural.png",
+  sports: "/src/public/banners/sports.png",
+  hackathon: "/src/public/banners/hackathon.png",
+  workshop: "/src/public/banners/workshop.png",
+  other: "/src/public/banners/other.png",
 };
 
 const EventForm: React.FC<EventFormProps> = ({
@@ -112,7 +107,7 @@ const EventForm: React.FC<EventFormProps> = ({
     onSubmit({
       title: formData.title,
       collegeName: formData.collegeName,
-      category: formData.category,
+      category: formData.category as "cultural" | "sports" | "hackathon" | "workshop" | "other",
       location: formData.location,
       startDate: formData.startDate,
       endDate: formData.endDate,
