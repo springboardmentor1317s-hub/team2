@@ -17,10 +17,16 @@ import WhatsAppBtn from "./components/WhatsAppBtn";
 import { Event } from "./types";
 import { useTheme } from "./context/ThemeContext";
 import { toast } from "sonner";
-
+import CompleteProfileModal from "./components/CompleteProfileModal";
 // Define the pages for clarity
 type UserRole = "student" | "admin";
-type AppPages = "home" | "login" | "register" | "dashboard" | "discover";
+type AppPages =
+  | "home"
+  | "login"
+  | "register"
+  | "dashboard"
+  | "discover"
+  | "complete-profile";
 
 // Re-defining the types locally for clarity/completeness
 interface User {
@@ -39,8 +45,7 @@ interface Registration {
   status: "pending" | "approved" | "rejected";
   timestamp: string;
 }
-
-
+type Role = "student" | "admin";
 // Mock Initial Data (for testing the flow)
 const MOCK_EVENTS: Event[] = [
   {
@@ -83,7 +88,7 @@ export default function App() {
   // 2. Page Navigation State
   const [currentPage, setCurrentPage] = useState<AppPages>("home");
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-
+  const [showModal, setShowModal] = useState<boolean>(false);
   // 3. Application Data & UI State
   // NEW: State to manage the visibility of the Event Form
   const [isEventFormOpen, setIsEventFormOpen] = useState(false);
@@ -270,6 +275,46 @@ export default function App() {
     );
   };
 
+  const handleCompleteProfile = async ({
+    role,
+    university,
+  }: {
+    role: Role;
+    university: string;
+  }) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.error("No token found. User must be authenticated.");
+        return;
+      }
+      const res = await fetch(
+        "http://localhost:5000/api/users/complete-profile",
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ role, university }),
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.message);
+        return;
+      }
+
+      toast.success(data.message);
+      setShowModal(false);
+      handleLoginSuccess(data.user);
+    } catch (error) {
+      console.error("Error completing profile:", error);
+    }
+  };
+
   // --- Render Logic: Determines which primary component to render ---
   const renderPageContent = () => {
     // --- AUTHENTICATED PAGES ---
@@ -315,13 +360,22 @@ export default function App() {
         <Login
           setCurrentPage={(p: string) => setCurrentPage(p as AppPages)}
           onLoginSuccess={handleLoginSuccess}
+          setShowModal={setShowModal}
         />
       );
     }
 
     // Default to Home (The starting page)
     return (
-      <Hero setCurrentPage={(p: string) => setCurrentPage(p as AppPages)} />
+      <>
+        <Hero setCurrentPage={(p: string) => setCurrentPage(p as AppPages)} />
+        {showModal && (
+          <CompleteProfileModal
+            onSubmit={handleCompleteProfile}
+            isOpen={showModal}
+          />
+        )}
+      </>
     );
   };
 
