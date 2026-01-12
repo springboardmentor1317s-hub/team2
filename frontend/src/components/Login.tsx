@@ -1,21 +1,20 @@
-import {
-  ArrowRight,
-  Mail,
-  Lock,
-  Github,
-  Chrome,
-  Eye,
-  EyeOff,
-} from "lucide-react";
+import { ArrowRight, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { BsGithub } from "react-icons/bs";
+import { GoogleLogin } from "@react-oauth/google";
 
 interface LoginProps {
   setCurrentPage: (page: string) => void;
   onLoginSuccess: (user: any) => void;
+  setShowModal: (isOpen: boolean) => void;
 }
 
-export function Login({ setCurrentPage, onLoginSuccess }: LoginProps) {
+export function Login({
+  setCurrentPage,
+  onLoginSuccess,
+  setShowModal,
+}: LoginProps) {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -59,11 +58,41 @@ export function Login({ setCurrentPage, onLoginSuccess }: LoginProps) {
       } else {
         // Failure: status is 400 or 500. The error message is already in the 'data' object.
         toast.error(responseData.message);
-        
       }
     } catch (error) {
       console.error("Network Error or Stream Failure:", error);
       toast.error("Failed to connect to the server.");
+    }
+  };
+
+  const handleLoginWithGoogle = async (code: any) => {
+    try {
+      const response = await fetch("http://localhost:5000/api/auth/google", {
+        method: "POST",
+        body: JSON.stringify({ code }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+
+      const responseData = await response.json();
+
+      if (response.ok) {
+        localStorage.setItem("token", responseData.token);
+        if (!responseData.user.role && !responseData.user.university) {
+          setShowModal(true);
+          setCurrentPage("complete-profile");
+        } else {
+          toast.success(responseData.message);
+          onLoginSuccess(responseData.user);
+        }
+      } else {
+        // Failure: status is 400 or 500. The error message is already in the 'data' object.
+        toast.error(responseData.message);
+      }
+    } catch (error) {
+      console.error("Network Error or Stream Failure:", error);
     }
   };
 
@@ -103,12 +132,27 @@ export function Login({ setCurrentPage, onLoginSuccess }: LoginProps) {
 
               {/* Social Login */}
               <div className="social-login">
-                <button className="btn btn-social">
-                  <Chrome className="social-icon" />
-                  Continue with Google
-                </button>
-                <button className="btn btn-social">
-                  <Github className="social-icon" />
+                <GoogleLogin
+                  onSuccess={(credentialResponse) => {
+                    handleLoginWithGoogle(credentialResponse.credential);
+                  }}
+                  theme="outline"
+                  text="continue_with"
+                  shape="rectangular"
+                  logo_alignment="center"
+                  onError={() => {
+                    toast.error("Login Failed");
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() =>
+                    (window.location.href =
+                      "http://localhost:5000/api/auth/github")
+                  }
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 rounded-lg bg-white text-[15px] text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
+                >
+                  <BsGithub />
                   Continue with GitHub
                 </button>
               </div>
