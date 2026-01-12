@@ -133,7 +133,7 @@ const loginWithGoogle = async (req, res) => {
       });
     }
     // Check if the user already exists
-    let user = await User.findOne({ email }).select("+password");
+    let user = await User.findOne({ email });
     if (!user) {
       // If the user doesn't exist, create a new one
       user = await User.create({
