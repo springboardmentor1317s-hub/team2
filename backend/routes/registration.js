@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const Registration = require('../models/Registration');
 const { protect, isAdmin } = require('../middleware/auth');
+const Feedback = require('../models/Feedback');
+
 
 // 1. STUDENT: Register for an event
 // POST /api/registrations
@@ -32,18 +34,30 @@ router.post('/', protect, async (req, res) => {
 
 // 2. ADMIN: Get all registrations (to show on Admin Dashboard)
 // GET /api/registrations/all
-router.get('/all', protect, isAdmin, async (req, res) => {
+router.get('/my', protect, async (req, res) => {
   try {
-    const registrations = await Registration.find()
-      .populate('event', 'title collegeName')
-      .populate('student', 'fullName email')
+    const myRegs = await Registration.find({ student: req.user._id })
+      .populate('event', 'title startDate location imageUrl collegeName')
       .sort('-createdAt')
-      .lean(); // Faster processing
-    res.json(registrations);
+      .lean(); // IMPORTANT
+
+    // 🔑 ADD feedbackSubmitted flag
+    for (let reg of myRegs) {
+      const eventId = reg.event?._id || reg.event;
+
+      reg.feedbackSubmitted = await Feedback.exists({
+       userId: req.user._id,
+       eventId: eventId,
+});
+
+    }
+
+    res.json(myRegs);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
+
 
 // 3. ADMIN: Approve or Reject a registration
 // PUT /api/registrations/:id/status
@@ -67,16 +81,18 @@ router.put('/:id/status', protect, isAdmin, async (req, res) => {
   }
 });
 
-// 4. STUDENT: Get my registrations (to see status and admin action)
-// GET /api/registrations/my
-router.get('/my', protect, async (req, res) => {
+// ADMIN: Get all registrations
+// GET /api/registrations/all
+router.get('/all', protect, isAdmin, async (req, res) => {
   try {
-    const myRegs = await Registration.find({ student: req.user._id })
-      .populate('event', 'title startDate location imageUrl collegeName')
+    const regs = await Registration.find()
+      .populate('event', 'title collegeName startDate')
+      .populate('student', 'fullName email')
       .sort('-createdAt');
-    res.json(myRegs);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+
+    res.json(regs);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 

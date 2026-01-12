@@ -10,6 +10,7 @@ dotenv.config();
 
 const authRoutes = require('./routes/auth');
 const eventRoutes = require('./routes/events');
+const commentRoutes = require('./routes/comments');
 
 const app = express();
 
@@ -23,6 +24,8 @@ app.use(cors({
 // Body parser for JSON data
 app.use(express.json({ limit: '10mb' })); 
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
+app.use("/api/feedback", require("./routes/feedback"));
+
 
 // --- Database Connection ---
 const PORT = process.env.PORT || 5000;
@@ -46,6 +49,9 @@ app.use('/api/auth', authRoutes);
 
 // Events routes (Get, Filter, Create)
 app.use('/api/events', eventRoutes);
+
+// Comments routes (Create, Read, Update, Delete)
+app.use('/api/comments', commentRoutes);
 
 // Registration routes (Apply, Approve/Reject)
 app.use('/api/registrations', require('./routes/registration'));

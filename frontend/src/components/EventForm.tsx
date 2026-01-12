@@ -14,6 +14,8 @@ import hackathonBanner from "../public/banners/hackathon.png";
 import workshopBanner from "../public/banners/workshop.png";
 import culturalBanner from "../public/banners/cultural.png";
 import otherbanner from "../public/banners/other.png";
+import EventFeedbackAdmin from "./EventFeedbackAdmin";
+
 
 interface EventFormProps {
   onClose: () => void;
@@ -413,6 +415,13 @@ const EventForm: React.FC<EventFormProps> = ({
               </button>
             </div>
           </form>
+          {mode === "edit" && initialEvent && (
+  <div className="px-6 pb-6 border-t border-gray-200">
+    <EventFeedbackAdmin eventId={initialEvent._id} />
+  </div>
+)}
+
+
         </div>
       </div>
     </div>

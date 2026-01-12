@@ -44,6 +44,8 @@ import { useTheme } from "../context/ThemeContext";
 import { formatDate } from "../utils/formatters";
 import { getEventStatus } from "../utils/eventStatus";
 import EventForm from "./EventForm";
+import EventFeedback from "./EventFeedback";
+import FeedbackAnalytics from "./FeedbackAnalytics";
 
 // --- 💡 MOCK STRUCTURES (From your previous working code) ---
 // Define the roles explicitly for comparison
@@ -316,14 +318,14 @@ export function Dashboard({
     : registrations;
 
   // 🔑 NEW: Filter events for admin - show only events created by this admin
+  const userId = (user as any)._id || user.id;
+
   const adminOwnedEvents = isAdmin
     ? events.filter((event) => {
-        // Compare adminId with user.id
-        // adminId could be a string or ObjectId, and could be stored as _id property
-        const eventAdminId = String(event.adminId || event.admin?._id || "");
-        const userId = String(user.id || "");
-        const isMatch = eventAdminId === userId;
-        return isMatch;
+        const eventAdminId =
+          typeof event.adminId === "object" ? event.adminId._id : event.adminId;
+
+        return String(eventAdminId) === String(userId);
       })
     : events;
 
@@ -342,9 +344,6 @@ export function Dashboard({
     : registrations;
 
   // 🔑 ADD THIS LINE: Filter events created ONLY by the current admin
-  const myCreatedEvents = events.filter(
-    (event) => event.organizerId === user.id || event.adminId === user.id
-  );
 
   // Create CSV content
   const handleExportData = () => {
@@ -438,21 +437,34 @@ export function Dashboard({
   const handleDeleteEvent = async (eventId: string) => {
     try {
       const token = localStorage.getItem("token");
-      if (!token) return;
+      if (!token) {
+        alert("Authentication required");
+        return;
+      }
+
       const res = await fetch(`http://localhost:5000/api/events/${eventId}`, {
         method: "DELETE",
-        headers: { "x-auth-token": token },
+        headers: {
+          "x-auth-token": token,
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       });
+
+      const data = await res.json();
+
       if (res.ok) {
         setEvents((prev) =>
           prev.filter((e) => String(e._id || e.id) !== String(eventId))
         );
+        alert("Event deleted successfully!");
       } else {
-        const data = await res.json();
-        alert(data.message || "Failed to delete event");
+        console.error("Delete response:", data);
+        alert(data.message || `Failed to delete event (${res.status})`);
       }
     } catch (err) {
       console.error("Delete event error:", err);
+      alert("Error deleting event. Please try again.");
     }
   };
 
@@ -463,19 +475,34 @@ export function Dashboard({
   ) => {
     try {
       const token = localStorage.getItem("token");
-      if (!token) return;
+      if (!token) {
+        alert("Authentication required");
+        return;
+      }
+
+      // Remove fields that shouldn't be sent in update
       const payload = { ...updated };
+
+      console.log("Submitting edit with payload:", payload);
+
       const res = await fetch(`http://localhost:5000/api/events/${eventId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           "x-auth-token": token,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(payload),
       });
+
+      console.log("Edit response status:", res.status);
+
       const data = await res.json();
-      if (res.ok && data.success) {
-        const updatedEvent = data.data;
+      console.log("Edit response data:", data);
+
+      // Check if response is OK (200-299 status code) OR if success field is true
+      if ((res.ok || res.status === 200) && (data.success || data.data)) {
+        const updatedEvent = data.data || data;
         setEvents((prev) =>
           prev.map((e) =>
             String(e._id || e.id) === String(eventId)
@@ -485,11 +512,14 @@ export function Dashboard({
         );
         setIsEditOpen(false);
         setSelectedEvent(null);
+        alert("Event updated successfully!");
       } else {
-        alert(data.message || "Failed to update event");
+        console.error("Update failed - response:", data);
+        alert(data.message || `Failed to update event (${res.status})`);
       }
     } catch (err) {
       console.error("Update event error:", err);
+      alert("Error updating event. Please try again.");
     }
   };
 
@@ -500,7 +530,7 @@ export function Dashboard({
     "User Management",
     "Event Management",
     "Registrations",
-    "Admin Logs",
+    "Feedback Analytics",
   ];
   const studentTabs = ["Overview", "Discover Events", "My Events"];
   const currentTabs = isAdmin ? adminTabs : studentTabs;
@@ -510,7 +540,7 @@ export function Dashboard({
     "user management",
     "event management",
     "registrations",
-    "admin logs",
+    "feedback analytics",
     "my events",
   ].includes(activeTab);
 
@@ -765,75 +795,91 @@ export function Dashboard({
               </tr>
             ) : (
               regList.map((reg) => (
-                <tr
-                  key={reg._id} // 🔑 Changed from reg.id to reg._id
-                  className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors"
-                >
-                  <td className="px-6 py-4 font-medium text-gray-900">
-                    {/* 🔑 Logic: Get name from populated student object */}
-                    {reg.student?.fullName || "User"}
-                  </td>
-                  <td className="px-6 py-4 text-gray-600">
-                    {/* 🔑 Logic: Get title from populated event object */}
-                    {reg.event?.title || "Event Details"}
-                  </td>
-                  <td className="px-6 py-4 text-gray-500">
-                    {/* 🔑 Logic: Use appliedAt date from DB */}
-                    {formatDate(reg.appliedAt || reg.createdAt)}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize ${
-                        reg.status === "approved"
-                          ? "bg-green-100 text-green-700"
-                          : reg.status === "rejected"
-                          ? "bg-red-100 text-red-700"
-                          : "bg-yellow-100 text-yellow-700"
-                      }`}
-                    >
-                      {reg.status}
-                    </span>
-                  </td>
+                <React.Fragment key={reg._id}>
+                  {/* MAIN REGISTRATION ROW */}
+                  <tr className="border-b border-gray-50 hover:bg-gray-50/50">
+                    <td className="px-6 py-4 font-medium text-gray-900">
+                      {reg.student?.fullName || "User"}
+                    </td>
 
-                  <td className="px-6 py-4 text-right">
-                    {showAdminActions && reg.status === "pending" ? (
-                      <div className="flex justify-end gap-2">
-                        <button
-                          onClick={() =>
-                            handleUpdateRegistrationStatus(reg._id, "approved")
-                          }
-                          className="p-1 text-green-600 hover:bg-green-50 rounded"
-                          title="Approve"
-                        >
-                          <Check className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() =>
-                            handleUpdateRegistrationStatus(reg._id, "rejected")
-                          }
-                          className="p-1 text-red-600 hover:bg-red-50 rounded"
-                          title="Reject"
-                        >
-                          <XIcon className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ) : showAdminActions ? (
-                      <div className="text-xs text-gray-400 italic">
-                        Processed
-                      </div>
-                    ) : reg.status === "pending" ? (
-                      <div className="text-xs text-yellow-600 font-medium italic">
-                        Waiting...
-                      </div>
-                    ) : (
-                      <div className="text-xs text-gray-600 font-medium">
-                        {getCollegeName(
-                          reg.eventId || reg.event?._id || reg.event?.id
-                        )}
-                      </div>
-                    )}
-                  </td>
-                </tr>
+                    <td className="px-6 py-4 text-gray-600">
+                      {reg.event?.title || "Event Details"}
+                    </td>
+
+                    <td className="px-6 py-4 text-gray-500">
+                      {formatDate(reg.appliedAt || reg.createdAt)}
+                    </td>
+
+                    <td className="px-6 py-4">
+                      <span
+                        className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize ${
+                          reg.status === "approved"
+                            ? "bg-green-100 text-green-700"
+                            : reg.status === "rejected"
+                            ? "bg-red-100 text-red-700"
+                            : "bg-yellow-100 text-yellow-700"
+                        }`}
+                      >
+                        {reg.status}
+                      </span>
+                    </td>
+
+                    <td className="px-6 py-4 text-right">
+                      {showAdminActions && reg.status === "pending" ? (
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() =>
+                              handleUpdateRegistrationStatus(
+                                reg._id,
+                                "approved"
+                              )
+                            }
+                            className="p-1 text-green-600 hover:bg-green-50 rounded"
+                          >
+                            <Check className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() =>
+                              handleUpdateRegistrationStatus(
+                                reg._id,
+                                "rejected"
+                              )
+                            }
+                            className="p-1 text-red-600 hover:bg-red-50 rounded"
+                          >
+                            <XIcon className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : showAdminActions ? (
+                        <div className="text-xs text-gray-400 italic">
+                          Processed
+                        </div>
+                      ) : reg.status === "pending" ? (
+                        <div className="text-xs text-yellow-600 font-medium italic">
+                          Waiting...
+                        </div>
+                      ) : (
+                        <div className="text-xs text-gray-600 font-medium">
+                          {getCollegeName(
+                            reg.eventId || reg.event?._id || reg.event?.id
+                          )}
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+
+                  {/* ⭐ FEEDBACK ROW (STUDENT + APPROVED ONLY) */}
+                  {!isAdmin && reg.status === "approved" && (
+                    <tr className="bg-gray-50">
+                      <td colSpan={5} className="px-6 py-4">
+                        <EventFeedback
+                          eventId={reg.event?._id || reg.eventId}
+                          disabled={false}
+                        />
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
               ))
             )}
           </tbody>
@@ -842,6 +888,7 @@ export function Dashboard({
     </div>
   );
 
+  // admin logs table
   const AdminLogsTable = () => (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
       <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
@@ -1191,7 +1238,7 @@ export function Dashboard({
             </div>
 
             {/* Stats Grid - Always visible on Overview, maybe modified for others */}
-            {!children && (
+            {!children && activeTab !== "feedback analytics" && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard
                   title={
@@ -1339,7 +1386,10 @@ export function Dashboard({
                             </div>
                           </div>
                         )}
-                        <RecentEventsTable events={events} limit={5} />
+                        <RecentEventsTable
+                          events={isAdmin ? adminOwnedEvents : events}
+                          limit={5}
+                        />
                       </>
                     )}
                     {activeTab === "user management" && <UserActivityTable />}
@@ -1352,6 +1402,9 @@ export function Dashboard({
                           isAdmin ? adminOwnedRegistrations : registrations
                         }
                       />
+                    )}
+                    {activeTab === "feedback analytics" && (
+                      <FeedbackAnalytics />
                     )}
                     {activeTab === "admin logs" && <AdminLogsTable />}
                     {activeTab === "my events" && (
@@ -1366,6 +1419,7 @@ export function Dashboard({
                       activeTab !== "user management" &&
                       activeTab !== "event management" &&
                       activeTab !== "registrations" &&
+                      activeTab !== "feedback analytics" &&
                       activeTab !== "admin logs" &&
                       activeTab !== "my events" && (
                         <div className="bg-white p-12 rounded-xl shadow-sm border border-gray-100 text-center text-gray-500">

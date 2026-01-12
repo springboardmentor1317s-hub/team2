@@ -279,7 +279,7 @@ export default function App() {
             setCurrentPage={(p: string) => setCurrentPage(p as AppPages)}
             onCreateEventClick={() => setIsEventFormOpen(true)}
           >
-            <EventsDiscoveryPage events={events} />
+            <EventsDiscoveryPage initialEvents={events} />
           </Dashboard>
         );
       }
