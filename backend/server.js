@@ -38,11 +38,11 @@ app.get('/', (req, res) => {
 });
 
 // Authentication routes (Register/Login)
-app.use('/api/auth', authRoutes);
-
+app.use("/api/auth", authRoutes);
+app.use("/api/users", require("./routes/user"));
 // Events routes (Get, Filter, Create)
 app.use("/api/events", eventRoutes);
-app.use('/api/registrations', require('./routes/registration'));
+app.use("/api/registrations", require("./routes/registration"));
 
 // --- Start Server ---
 app.listen(PORT, () => {
