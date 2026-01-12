@@ -290,7 +290,7 @@ export function Dashboard({
           headers: { Authorization: `Bearer ${token}` },
         });
         const regData = await regRes.json();
-        if (!regData.msg) {
+        if (!regData.message) {
           setRegistrations(regData);
         }
       } catch (error) {
