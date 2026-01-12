@@ -81,18 +81,42 @@ const CommentSection: React.FC<CommentSectionProps> = ({
       return;
     }
 
+    // Get user data directly from localStorage to ensure it's available
+    let userName = "Anonymous";
+    try {
+      const userData = localStorage.getItem("user");
+      if (userData) {
+        const user = JSON.parse(userData);
+        userName = user.fullName || user.name || "Anonymous";
+      }
+    } catch (err) {
+      console.warn("Could not parse user data from localStorage", err);
+    }
+
+    // Validate userName is not empty or undefined
+    if (!userName || userName === "undefined") {
+      userName = "Anonymous";
+    }
+
+    console.log("Submitting comment with userName:", userName);
+
     try {
       setIsSubmittingComment(true);
+      const payload = {
+        eventId,
+        content: newComment,
+        userName: userName,
+      };
+
+      console.log("Comment payload:", payload);
+
       const response = await fetch("http://localhost:5000/api/comments", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          eventId,
-          content: newComment,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
@@ -101,11 +125,12 @@ const CommentSection: React.FC<CommentSectionProps> = ({
         setNewComment("");
         fetchComments();
         if (onCommentAdded) onCommentAdded();
+        alert("Comment posted successfully!");
       } else {
         alert(data.message || "Failed to post comment");
       }
     } catch (error) {
-      console.error("Error adding comment:", error);
+      console.error("Create Comment Error:", error);
       alert("Error posting comment");
     } finally {
       setIsSubmittingComment(false);
@@ -522,7 +547,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                       placeholder="Write a reply..."
                       maxLength={500}
                       rows={2}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none text-gray-700"
                     />
                     <div className="flex gap-2 justify-end">
                       <button
