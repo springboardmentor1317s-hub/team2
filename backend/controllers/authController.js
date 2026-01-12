@@ -1,5 +1,8 @@
+// import githubClient from "../services/githubAuthService";
 const jwt = require("jsonwebtoken");
 const User = require("../models/User"); // Import the User model
+const { verifyGoogleCode } = require("../services/googleService");
+const { githubClient } = require("../services/githubAuthService");
 
 // Helper function to create a JWT token
 const createToken = (id) => {
@@ -8,7 +11,7 @@ const createToken = (id) => {
   });
 };
 
- const registerUser = async (req, res) => {
+const registerUser = async (req, res) => {
   try {
     // 💡 NEW DIAGNOSTIC LINE
     // console.log('Data received by server:', req.body); // Check the data Express received
@@ -26,9 +29,10 @@ const createToken = (id) => {
     const user = await User.create({
       fullName,
       email,
+      password,
       university,
       role,
-      password,
+      authProvider: "local",
     });
 
     // 3. Create a token for immediate login
@@ -45,6 +49,7 @@ const createToken = (id) => {
         email: user.email,
         university: user.university,
         role: user.role,
+        authProvider: "local",
       },
     });
   } catch (error) {
@@ -64,7 +69,7 @@ const createToken = (id) => {
   }
 };
 
- const loginUser = async (req, res) => {
+const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -99,6 +104,8 @@ const createToken = (id) => {
         email: user.email,
         university: user.university,
         role: user.role,
+        profilePicture: user.profilePicture,
+        authProvider: user.authProvider,
       },
     });
   } catch (error) {
@@ -109,7 +116,140 @@ const createToken = (id) => {
   }
 };
 
+const loginWithGoogle = async (req, res) => {
+  const { code } = req.body;
+  if (!code) {
+    return res.json({ message: "Invalid credentials!" });
+  }
+  try {
+    const { name, email, picture, email_verified } = await verifyGoogleCode(
+      code
+    );
+
+    if (!email_verified) {
+      return res.status(401).json({
+        success: false,
+        message: "Google email is not verified",
+      });
+    }
+    // Check if the user already exists
+    let user = await User.findOne({ email }).select("+password");
+    if (!user) {
+      // If the user doesn't exist, create a new one
+      user = await User.create({
+        fullName: name,
+        email: email,
+        profilePicture: picture,
+        authProvider: "google",
+      });
+      const token = createToken(user._id);
+      res.status(200).json({
+        success: true,
+        message: "Login successful!",
+        token,
+        user: {
+          id: user._id,
+          fullName: name,
+          email: email,
+          profilePicture: picture,
+          authProvider: "google",
+        },
+      });
+    } else {
+      // If the user already exists, return the user's details
+      const token = createToken(user._id);
+      res.status(200).json({
+        success: true,
+        message: "Login successful!",
+        token,
+        user: {
+          id: user._id,
+          fullName: user.fullName,
+          email: user.email,
+          university: user.university,
+          role: user.role,
+          profilePicture: user.profilePicture,
+          authProvider: user.authProvider,
+        },
+      });
+    }
+  } catch (error) {
+    console.error("Google login error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Server error during Google login",
+    });
+  }
+};
+
+const loginWithGithub = async (req, res) => {
+  const { code, state } = req.query;
+  if (!code || !state) {
+    return res.status(400).json({
+      success: false,
+      message: "Missing code or state",
+    });
+  }
+
+  const decodedState = JSON.parse(
+    Buffer.from(state, "base64").toString("utf-8")
+  );
+
+  const { clientOrigin } = decodedState;
+
+  try {
+    const { email, name, picture } = await githubClient.getUserDetails(code);
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "GitHub email not available",
+      });
+    }
+
+    // Check if the user already exists
+    let user = await User.findOne({ email });
+    if (!user) {
+      // If the user doesn't exist, create a new one
+      user = await User.create({
+        fullName: name,
+        email: email,
+        profilePicture: picture,
+        authProvider: "github",
+      });
+    }
+
+    res.redirect(`${clientOrigin}`);
+  } catch (error) {
+    console.error("GitHub login error:", error);
+  }
+};
+
+const redirectToAuthURL = async (req, res) => {
+  const referer = req.get("referer");
+  const clientOrigin = referer ? new URL(referer).origin : null;
+  const { state: githubState, url } = githubClient.getWebFlowAuthorizationUrl({
+    scopes: ["read:user", "user:email"],
+    redirectUrl: `http://localhost:5000/api/auth/github/callback`,
+  });
+
+  const combinedState = Buffer.from(
+    JSON.stringify({
+      githubState,
+      clientOrigin,
+    })
+  ).toString("base64");
+
+  const redirectURL = `${url}&state=${combinedState}`;
+  res.redirect(redirectURL);
+  res.end();
+};
+
 module.exports = {
   registerUser,
   loginUser,
+  loginWithGoogle,
+  redirectToAuthURL,
+  loginWithGithub,
 };
