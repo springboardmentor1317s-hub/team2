@@ -7,6 +7,7 @@ type Theme = "light" | "dark";
 interface ThemeContextProps {
   theme: Theme;
   toggleTheme: () => void;
+  setThemeExplicit: (theme: Theme) => void;
 }
 
 const ThemeContext = createContext<ThemeContextProps | undefined>(undefined);
@@ -67,8 +68,18 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
     });
   };
 
+  const setThemeExplicit = (nextTheme: Theme) => {
+    setTheme((currentTheme) => {
+      if (currentTheme === nextTheme) {
+        return currentTheme;
+      }
+      console.log("Forcing theme to:", nextTheme);
+      return nextTheme;
+    });
+  };
+
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme, toggleTheme, setThemeExplicit }}>
       {children}
     </ThemeContext.Provider>
   );

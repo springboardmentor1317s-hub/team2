@@ -197,7 +197,7 @@ export function Register({
                     <option value="">Select your role</option>
                     <option value="student">student</option>
                     <option value="admin">Admin</option>
-                    <option value="organizer">Organizer</option>
+
                   </select>
                 </div>
 
