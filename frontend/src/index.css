@@ -3,7 +3,11 @@
 /*! tailwindcss v4.1.3 | MIT License | https://tailwindcss.com */
 @layer properties {
   @supports (((-webkit-hyphens: none)) and (not (margin-trim: inline))) or ((-moz-orient: inline) and (not (color: rgb(from red r g b)))) {
-    *, :before, :after, ::backdrop {
+
+    *,
+    :before,
+    :after,
+    ::backdrop {
       --tw-blur: initial;
       --tw-brightness: initial;
       --tw-contrast: initial;
@@ -22,7 +26,9 @@
 }
 
 @layer theme {
-  :root, :host {
+
+  :root,
+  :host {
     --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     --spacing: .25rem;
@@ -42,7 +48,11 @@
 }
 
 @layer base {
-  *, :after, :before, ::backdrop {
+
+  *,
+  :after,
+  :before,
+  ::backdrop {
     box-sizing: border-box;
     border: 0 solid;
     margin: 0;
@@ -56,7 +66,8 @@
     padding: 0;
   }
 
-  html, :host {
+  html,
+  :host {
     -webkit-text-size-adjust: 100%;
     tab-size: 4;
     line-height: 1.5;
@@ -81,7 +92,12 @@
     text-decoration: underline dotted;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-size: inherit;
     font-weight: inherit;
   }
@@ -93,11 +109,15 @@
     text-decoration: inherit;
   }
 
-  b, strong {
+  b,
+  strong {
     font-weight: bolder;
   }
 
-  code, kbd, samp, pre {
+  code,
+  kbd,
+  samp,
+  pre {
     font-family: var(--default-mono-font-family, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
     font-feature-settings: var(--default-mono-font-feature-settings, normal);
     font-variation-settings: var(--default-mono-font-variation-settings, normal);
@@ -108,7 +128,8 @@
     font-size: 80%;
   }
 
-  sub, sup {
+  sub,
+  sup {
     vertical-align: baseline;
     font-size: 75%;
     line-height: 0;
@@ -141,20 +162,34 @@
     display: list-item;
   }
 
-  ol, ul, menu {
+  ol,
+  ul,
+  menu {
     list-style: none;
   }
 
-  img, svg, video, canvas, audio, iframe, embed, object {
+  img,
+  svg,
+  video,
+  canvas,
+  audio,
+  iframe,
+  embed,
+  object {
     display: block;
   }
 
-  img, video {
+  img,
+  video {
     max-width: 100%;
     height: auto;
   }
 
-  button, input, select, optgroup, textarea {
+  button,
+  input,
+  select,
+  optgroup,
+  textarea {
     font: inherit;
     font-feature-settings: inherit;
     font-variation-settings: inherit;
@@ -260,7 +295,8 @@
     box-shadow: none;
   }
 
-  button, input:where([type="button"], [type="reset"], [type="submit"]) {
+  button,
+  input:where([type="button"], [type="reset"], [type="submit"]) {
     appearance: button;
   }
 
@@ -344,7 +380,8 @@
     line-height: 1.5;
   }
 
-  :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) label, :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) button {
+  :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) label,
+  :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) button {
     font-size: var(--text-base);
     font-weight: var(--font-weight-medium);
     line-height: 1.5;
@@ -362,31 +399,31 @@
     width: 100%;
   }
 
-  @media (width >= 40rem) {
+  @media (width >=40rem) {
     .container {
       max-width: 40rem;
     }
   }
 
-  @media (width >= 48rem) {
+  @media (width >=48rem) {
     .container {
       max-width: 48rem;
     }
   }
 
-  @media (width >= 64rem) {
+  @media (width >=64rem) {
     .container {
       max-width: 64rem;
     }
   }
 
-  @media (width >= 80rem) {
+  @media (width >=80rem) {
     .container {
       max-width: 80rem;
     }
   }
 
-  @media (width >= 96rem) {
+  @media (width >=96rem) {
     .container {
       max-width: 96rem;
     }
@@ -424,7 +461,7 @@ body {
 }
 
 .app-container {
-  
+
   min-height: 100vh;
   position: relative;
   overflow: hidden;
@@ -539,7 +576,9 @@ body {
 }
 
 @keyframes sparkle {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1)rotate(0);
   }
 
@@ -575,7 +614,7 @@ body {
   width: 100%;
   list-style: none;
   display: flex;
-  justify-content: flex-end ;
+  justify-content: flex-end;
 }
 
 .nav-item {
@@ -682,7 +721,9 @@ body {
 }
 
 @keyframes float {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 0;
     transform: translate(0)scale(0);
   }
@@ -718,7 +759,9 @@ body {
 }
 
 @keyframes float1 {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translate(0)scale(1);
   }
 
@@ -728,7 +771,9 @@ body {
 }
 
 @keyframes float2 {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translate(0)scale(1);
   }
 
@@ -864,7 +909,9 @@ body {
 }
 
 @keyframes arrowSlide {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateX(0);
   }
 
@@ -942,7 +989,9 @@ body {
 }
 
 @keyframes wiggle {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: rotate(0);
   }
 
@@ -974,7 +1023,7 @@ body {
   font-size: 1rem;
 }
 
-@media (width <= 768px) {
+@media (width <=768px) {
   .hero-title {
     font-size: 2.5rem;
   }
@@ -988,7 +1037,8 @@ body {
     align-items: center;
   }
 
-  .btn-primary-custom, .btn-secondary-custom {
+  .btn-primary-custom,
+  .btn-secondary-custom {
     width: 100%;
     max-width: 300px;
   }
@@ -1008,13 +1058,14 @@ body {
     justify-content: center;
   }
 
-  .orb-1, .orb-2 {
+  .orb-1,
+  .orb-2 {
     width: 250px;
     height: 250px;
   }
 }
 
-@media (width <= 576px) {
+@media (width <=576px) {
   .hero-title {
     font-size: 2rem;
   }
@@ -1023,18 +1074,20 @@ body {
     gap: .5rem;
     font-size: .9rem;
     justify-content: center !important;
-        margin-top: 0.5rem;
+    margin-top: 0.5rem;
   }
+
   .header-main .row {
-        /* On small screens, force content to stack and fill the space */
-        flex-direction: column;
-        align-items: center;
-    }
-    .header-main .col-md-4,
-    .header-main .col-md-8 {
-        width: 100% !important;
-        text-align: center;
-    }
+    /* On small screens, force content to stack and fill the space */
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .header-main .col-md-4,
+  .header-main .col-md-8 {
+    width: 100% !important;
+    text-align: center;
+  }
 
   .logo-text {
     font-size: 1rem;
@@ -1052,19 +1105,20 @@ body {
 }
 
 .register-content {
-    /* Ensures the content is in front of the background */
-    z-index: 10;
-    position: relative;
+  /* Ensures the content is in front of the background */
+  z-index: 10;
+  position: relative;
 
-    /* 🔑 CRITICAL FIX: Set a maximum width */
-    max-width: 500px; /* Adjust this value (500px is good for a form) */
-    
-    /* Ensure the content container is centered horizontally */
-    margin-left: auto;
-    margin-right: auto;
-    
-    /* Ensure no huge width overrides */
-    width: 100%;
+  /* 🔑 CRITICAL FIX: Set a maximum width */
+  max-width: 500px;
+  /* Adjust this value (500px is good for a form) */
+
+  /* Ensure the content container is centered horizontally */
+  margin-left: auto;
+  margin-right: auto;
+
+  /* Ensure no huge width overrides */
+  width: 100%;
 }
 
 .register-card {
@@ -1195,8 +1249,10 @@ body {
   border-radius: 0.375rem;
   cursor: pointer;
 
-  appearance: none;       /* remove default tick */
-  position: relative;     /* enable ::after tick */
+  appearance: none;
+  /* remove default tick */
+  position: relative;
+  /* enable ::after tick */
 }
 
 .custom-checkbox .form-check-input:checked {
@@ -1270,7 +1326,7 @@ body {
   text-decoration: underline;
 }
 
-@media (width <= 768px) {
+@media (width <=768px) {
   .register-card {
     padding: 2rem 1.5rem;
   }
@@ -1294,33 +1350,6 @@ body {
   gap: .75rem;
   margin-bottom: 1.5rem;
   display: flex;
-}
-
-.btn-social {
-  color: #fff;
-  cursor: pointer;
-  background: #0f172a80;
-  border: 1px solid #94a3b84d;
-  border-radius: .75rem;
-  justify-content: center;
-  align-items: center;
-  gap: .75rem;
-  width: 100%;
-  padding: .875rem 1rem;
-  font-size: 1rem;
-  transition: all .3s;
-  display: flex;
-}
-
-.btn-social:hover {
-  background: #0f172ab3;
-  border-color: #22d3ee;
-  transform: translateY(-2px);
-}
-
-.social-icon {
-  width: 20px;
-  height: 20px;
 }
 
 .divider {
@@ -1640,7 +1669,7 @@ body {
   font-size: 1.25rem;
 }
 
-@media (width <= 768px) {
+@media (width <=768px) {
   .discover-title {
     font-size: 2rem;
   }
@@ -1810,5 +1839,3 @@ html {
   syntax: "*";
   inherits: false
 }
-
-
