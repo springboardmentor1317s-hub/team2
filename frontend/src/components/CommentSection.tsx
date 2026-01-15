@@ -9,6 +9,8 @@ import {
   Loader2,
 } from "lucide-react";
 import { formatDate } from "../utils/formatters";
+import { BASE_URL } from "../App";
+import { toast } from "sonner";
 
 interface CommentSectionProps {
   eventId: string;
@@ -36,7 +38,6 @@ const CommentSection: React.FC<CommentSectionProps> = ({
 
   // ======== GET CURRENT USER ========
   useEffect(() => {
-    const token = localStorage.getItem("token");
     const userData = localStorage.getItem("user");
     if (userData) {
       setCurrentUser(JSON.parse(userData));
@@ -51,9 +52,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
   const fetchComments = async () => {
     try {
       setIsLoadingComments(true);
-      const response = await fetch(
-        `http://localhost:5000/api/comments/event/${eventId}`
-      );
+      const response = await fetch(`${BASE_URL}/api/comments/event/${eventId}`);
       const data = await response.json();
 
       if (data.success) {
@@ -70,43 +69,52 @@ const CommentSection: React.FC<CommentSectionProps> = ({
   const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!newComment.trim()) {
-      alert("Please write a comment");
-      return;
+    let userName = "Anonymous";
+    try {
+      const userData = localStorage.getItem("user");
+      if (userData) {
+        const user = JSON.parse(userData);
+        userName = user.fullName || user.name || "Anonymous";
+      }
+    } catch (err) {
+      console.warn("Could not parse user data from localStorage", err);
     }
 
-    const token = localStorage.getItem("token");
-    if (!token) {
-      alert("Please login to comment");
-      return;
+    // Validate userName is not empty or undefined
+    if (!userName || userName === "undefined") {
+      userName = "Anonymous";
     }
 
     try {
       setIsSubmittingComment(true);
-      const response = await fetch("http://localhost:5000/api/comments", {
+
+      const payload = {
+        eventId,
+        content: newComment,
+        userName: userName,
+      };
+
+      const response = await fetch(`${BASE_URL}/api/comments`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          eventId,
-          content: newComment,
-        }),
+        body: JSON.stringify(payload),
+        credentials: "include",
       });
 
       const data = await response.json();
 
       if (data.success) {
         setNewComment("");
+        toast.success(data.message || "Comment added successfully");
         fetchComments();
         if (onCommentAdded) onCommentAdded();
       } else {
-        alert(data.message || "Failed to post comment");
+        toast.error(data.message || "Failed to add comment");
       }
     } catch (error) {
       console.error("Error adding comment:", error);
-      alert("Error posting comment");
     } finally {
       setIsSubmittingComment(false);
     }
@@ -119,31 +127,27 @@ const CommentSection: React.FC<CommentSectionProps> = ({
       return;
     }
 
-    const token = localStorage.getItem("token");
-
     try {
-      const response = await fetch(
-        `http://localhost:5000/api/comments/${commentId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            content: editingContent,
-          }),
-        }
-      );
+      const response = await fetch(`${BASE_URL}/api/comments/${commentId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          content: editingContent,
+        }),
+        credentials: "include",
+      });
 
       const data = await response.json();
 
       if (data.success) {
         setEditingCommentId(null);
+        toast.success(data.message || "Comment updated successfully");
         setEditingContent("");
         fetchComments();
       } else {
-        alert(data.message || "Failed to update comment");
+        toast.error(data.message || "Failed to update comment");
       }
     } catch (error) {
       console.error("Error updating comment:", error);
@@ -156,25 +160,19 @@ const CommentSection: React.FC<CommentSectionProps> = ({
       return;
     }
 
-    const token = localStorage.getItem("token");
-
     try {
-      const response = await fetch(
-        `http://localhost:5000/api/comments/${commentId}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await fetch(`${BASE_URL}/api/comments/${commentId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
 
       const data = await response.json();
 
       if (data.success) {
         fetchComments();
+        toast.success(data.message || "Comment deleted successfully");
       } else {
-        alert(data.message || "Failed to delete comment");
+        toast.error(data.message || "Failed to delete comment");
       }
     } catch (error) {
       console.error("Error deleting comment:", error);
@@ -183,28 +181,19 @@ const CommentSection: React.FC<CommentSectionProps> = ({
 
   // ======== LIKE COMMENT ========
   const handleLikeComment = async (commentId: string) => {
-    const token = localStorage.getItem("token");
-
-    if (!token) {
-      alert("Please login to like comments");
-      return;
-    }
-
     try {
       const response = await fetch(
-        `http://localhost:5000/api/comments/${commentId}/like`,
+        `${BASE_URL}/api/comments/${commentId}/like`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
+          credentials: "include",
         }
       );
 
       const data = await response.json();
 
       if (data.success) {
+        toast.success(data.message || "Comment liked successfully");
         fetchComments();
       }
     } catch (error) {
@@ -219,26 +208,19 @@ const CommentSection: React.FC<CommentSectionProps> = ({
       return;
     }
 
-    const token = localStorage.getItem("token");
-
-    if (!token) {
-      alert("Please login to reply");
-      return;
-    }
-
     try {
       setIsSubmittingReply(true);
       const response = await fetch(
-        `http://localhost:5000/api/comments/${commentId}/reply`,
+        `${BASE_URL}/api/comments/${commentId}/reply`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
             content: replyContent,
           }),
+          credentials: "include",
         }
       );
 
@@ -246,10 +228,11 @@ const CommentSection: React.FC<CommentSectionProps> = ({
 
       if (data.success) {
         setReplyContent("");
+        toast.success(data.message || "Reply added successfully");
         setReplyingToId(null);
         fetchComments();
       } else {
-        alert(data.message || "Failed to post reply");
+        toast.error(data.message || "Failed to post reply");
       }
     } catch (error) {
       console.error("Error adding reply:", error);
@@ -274,7 +257,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
     switch (role) {
       case "super_admin":
         return "👑 Super Admin";
-      case "college_admin":
+      case "admin":
         return "🔑 Admin";
       default:
         return "👤 Student";
@@ -306,7 +289,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
             placeholder="Add a comment... (Max 1000 characters)"
             maxLength={1000}
             rows={3}
-            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none text-sm"
+            className="w-full px-4 py-3 text-gray-700 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none text-sm"
             disabled={isSubmittingComment}
           />
           <div className="flex justify-between items-center">
@@ -485,31 +468,34 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                         {comment.replies.length} Repl
                         {comment.replies.length !== 1 ? "ies" : "y"}
                       </p>
-                      {comment.replies.map((reply, idx) => (
-                        <div
-                          key={idx}
-                          className="bg-white rounded p-3 border border-gray-200 text-sm"
-                        >
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-semibold text-gray-900">
-                              {reply.userName}
-                            </span>
-                            <span
-                              className={`text-xs px-1.5 py-0.5 rounded font-medium ${getRoleColor(
-                                reply.userRole
-                              )}`}
-                            >
-                              {getRoleBadge(reply.userRole)}
-                            </span>
+                      {comment.replies.map((reply, idx) => {
+                        console.log(reply);
+                        return (
+                          <div
+                            key={idx}
+                            className="bg-white rounded p-3 border border-gray-200 text-sm"
+                          >
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-semibold text-gray-900">
+                                {reply.userName}
+                              </span>
+                              <span
+                                className={`text-xs px-1.5 py-0.5 rounded font-medium ${getRoleColor(
+                                  reply.userRole
+                                )}`}
+                              >
+                                {getRoleBadge(reply.userRole)}
+                              </span>
+                            </div>
+                            <p className="text-gray-700 leading-relaxed mb-1">
+                              {reply.content}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {formatDate(reply.createdAt)}
+                            </p>
                           </div>
-                          <p className="text-gray-700 leading-relaxed mb-1">
-                            {reply.content}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {formatDate(reply.createdAt)}
-                          </p>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
 
@@ -522,7 +508,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                       placeholder="Write a reply..."
                       maxLength={500}
                       rows={2}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none text-gray-700"
                     />
                     <div className="flex gap-2 justify-end">
                       <button
