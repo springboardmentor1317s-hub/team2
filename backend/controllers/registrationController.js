@@ -1,3 +1,4 @@
+const Feedback = require("../models/Feedback");
 const Registration = require("../models/Registration");
 
 const registerForEvent = async (req, res) => {
@@ -10,8 +11,8 @@ const registerForEvent = async (req, res) => {
 
     // Use 'event' and 'student' to match your Registration.js schema
     const registration = await Registration.create({
-      event:eventId, 
-      student: req.user._id, 
+      event: eventId,
+      student: req.user._id,
       studentName: req.user.fullName,
       status: "pending",
       appliedAt: Date.now(),
@@ -24,10 +25,12 @@ const registerForEvent = async (req, res) => {
   }
 };
 
+// ADMIN: Get all registrations
+// GET /api/registrations/all
 const getAllRegisteredEvents = async (req, res) => {
   try {
     const registrations = await Registration.find()
-      .populate("event", "title collegeName") 
+      .populate("event", "title collegeName startDate")
       .populate("student", "fullName email")
       .sort("-createdAt")
       .lean(); // Faster processing
@@ -40,8 +43,18 @@ const getAllRegisteredEvents = async (req, res) => {
 const getMyRegisteredEvents = async (req, res) => {
   try {
     const myRegs = await Registration.find({ student: req.user._id })
-      .populate("event", "title startDate location imageUrl collegeName") 
+      .populate("event", "title startDate location imageUrl collegeName")
       .sort("-createdAt");
+
+    // 🔑 ADD feedbackSubmitted flag
+    for (let reg of myRegs) {
+      const eventId = reg.event?._id || reg.event;
+
+      reg.feedbackSubmitted = await Feedback.exists({
+        userId: req.user._id,
+        eventId: eventId,
+      });
+    }
     res.json(myRegs);
   } catch (error) {
     res.status(500).json({ message: error.message });
