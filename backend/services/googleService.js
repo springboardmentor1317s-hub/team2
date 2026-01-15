@@ -4,10 +4,12 @@ const { OAuth2Client } = require("google-auth-library");
 const client = new OAuth2Client();
 async function verifyGoogleCode(code) {
   try {
+    // Verify the Google code
     const ticket = await client.verifyIdToken({
       idToken: code,
       audience: process.env.GOOGLE_CLIENT_ID,
     });
+    // Get the payload
     const payload = ticket.getPayload();
     return payload;
   } catch (error) {
