@@ -4,6 +4,7 @@ import { EventCard } from "./EventCard";
 import EventModal from "./EventModal";
 import { Event } from "../types";
 import { toast } from "sonner";
+import { BASE_URL } from "../App";
 
 interface EventsDiscoveryPageProps {
   initialEvents?: Event[];
@@ -36,19 +37,14 @@ export const EventsDiscoveryPage: React.FC<EventsDiscoveryPageProps> = ({
 
     const fetchData = async () => {
       try {
-        const token = localStorage.getItem("token");
         const [eventsRes, regRes, allRegRes] = await Promise.all([
-          fetch("http://localhost:5000/api/events"),
-          token
-            ? fetch("http://localhost:5000/api/registrations/my", {
-                headers: { Authorization: `Bearer ${token}` },
-              })
-            : Promise.resolve(null),
-          token
-            ? fetch("http://localhost:5000/api/registrations/all", {
-                headers: { Authorization: `Bearer ${token}` },
-              })
-            : Promise.resolve(null),
+          fetch(`${BASE_URL}/api/events`),
+          fetch(`${BASE_URL}/api/registrations/my`, {
+            credentials: "include",
+          }),
+          fetch(`${BASE_URL}/api/registrations/all`, {
+            credentials: "include",
+          }),
         ]);
 
         const [eventsData, regData, allRegData] = await Promise.all([
@@ -57,23 +53,25 @@ export const EventsDiscoveryPage: React.FC<EventsDiscoveryPageProps> = ({
           allRegRes.json(),
         ]);
 
-        if (isMounted) {
-          if (eventsData.success) setEvents(eventsData.data);
-          if (Array.isArray(regData)) {
-            setUserRegistrations(regData.map((r: any) => r.event?._id));
-          }
-          // Handle both array format and {success: true, data: [...]} format
-          if (Array.isArray(allRegData)) {
-            console.log("All registrations (array):", allRegData);
-            setAllRegistrations(allRegData);
-          } else if (allRegData?.success && Array.isArray(allRegData.data)) {
-            console.log("All registrations (data):", allRegData.data);
-            setAllRegistrations(allRegData.data);
-          } else {
-            console.log("All registrations response:", allRegData);
-          }
-          setLoading(false);
+        if (!isMounted) return;
+        // Events
+        if (eventsData?.success) {
+          setEvents(eventsData.data);
         }
+
+        // User registrations
+        if (Array.isArray(regData)) {
+          setUserRegistrations(regData.map((r: any) => r.event?._id));
+        }
+        // Handle both array format and {success: true, data: [...]} format
+        if (Array.isArray(allRegData)) {
+          setAllRegistrations(allRegData);
+        } else if (allRegData?.success && Array.isArray(allRegData.data)) {
+          setAllRegistrations(allRegData.data);
+        } else {
+          console.log("All registrations response:", allRegData);
+        }
+        setLoading(false);
       } catch (error) {
         if (isMounted) {
           console.error("Fetch error:", error);
@@ -90,20 +88,13 @@ export const EventsDiscoveryPage: React.FC<EventsDiscoveryPageProps> = ({
 
   // --- 2. REGISTRATION HANDLER ---
   const handleRegister = async (eventId: string) => {
-    console.log("Registering for Event ID:", eventId); // 👈 Add this
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        toast.info("Please login to register for events!");
-        return;
-      }
-
-      const response = await fetch("http://localhost:5000/api/registrations", {
+      const response = await fetch(`${BASE_URL}/api/registrations`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
+        credentials: "include",
         body: JSON.stringify({ eventId }),
       });
 
@@ -142,8 +133,6 @@ export const EventsDiscoveryPage: React.FC<EventsDiscoveryPageProps> = ({
         String(reg.event?._id) === String(eventId) ||
         String(reg.event?.id) === String(eventId)
     ).length;
-    console.log(
-    );
     return count;
   };
 
