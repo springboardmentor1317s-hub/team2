@@ -12,7 +12,11 @@ export function Header({ currentPage, setCurrentPage }: HeaderProps) {
         <div className="row align-items-center">
           <div className="col-md-4">
             {/* Logo */}
-            <div className="logo-container" onClick={() => setCurrentPage("home")} style={{ cursor: "pointer" }}>
+            <div
+              className="logo-container"
+              onClick={() => setCurrentPage("home")}
+              style={{ cursor: "pointer" }}
+            >
               <div className="logo-icon-wrapper">
                 <div className="logo-glow"></div>
                 <div className="logo-icon">
@@ -28,15 +32,17 @@ export function Header({ currentPage, setCurrentPage }: HeaderProps) {
               </div>
             </div>
           </div>
-          
+
           <div className="col-md-8">
             {/* Navigation */}
             <nav className="navbar-custom">
               <ul className="nav-list">
                 <li className="nav-item">
-                  <a 
-                    href="#" 
-                    className={`nav-link ${currentPage === "home" ? "active" : ""}`}
+                  <a
+                    href="#"
+                    className={`nav-link ${
+                      currentPage === "home" ? "active" : ""
+                    }`}
                     onClick={(e) => {
                       e.preventDefault();
                       setCurrentPage("home");
@@ -46,9 +52,11 @@ export function Header({ currentPage, setCurrentPage }: HeaderProps) {
                   </a>
                 </li>
                 <li className="nav-item">
-                  <a 
-                    href="#" 
-                    className={`nav-link ${currentPage === "discover" ? "active" : ""}`}
+                  <a
+                    href="#"
+                    className={`nav-link ${
+                      currentPage === "discover" ? "active" : ""
+                    }`}
                     onClick={(e) => {
                       e.preventDefault();
                       setCurrentPage("discover");
@@ -58,27 +66,29 @@ export function Header({ currentPage, setCurrentPage }: HeaderProps) {
                   </a>
                 </li>
                 <li className="nav-item">
-                  <a 
-                    href="#" 
-                    className={`nav-link ${currentPage === "register" ? "active" : ""}`}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setCurrentPage("register");
-                    }}
-                  >
-                    Register
-                  </a>
-                </li>
-                <li className="nav-item">
-                  <a 
-                    href="#" 
-                    className="nav-link btn-login"
+                  <a
+                    href="#"
+                    className={`nav-link ${
+                      currentPage === "register" ? "active" : ""
+                    }`}
                     onClick={(e) => {
                       e.preventDefault();
                       setCurrentPage("login");
                     }}
                   >
-                    Login
+                    Sign in
+                  </a>
+                </li>
+                <li className="nav-item">
+                  <a
+                    href="#"
+                    className="nav-link btn-login"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setCurrentPage("register");
+                    }}
+                  >
+                    Get Started
                   </a>
                 </li>
               </ul>
