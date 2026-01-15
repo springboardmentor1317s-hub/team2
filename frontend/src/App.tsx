@@ -18,6 +18,7 @@ import { Event } from "./types";
 import { useTheme } from "./context/ThemeContext";
 import { toast } from "sonner";
 import CompleteProfileModal from "./components/CompleteProfileModal";
+export const BASE_URL = "http://localhost:5000";
 // Define the pages for clarity
 type UserRole = "student" | "admin";
 type AppPages =
@@ -88,6 +89,7 @@ export default function App() {
   // 2. Page Navigation State
   const [currentPage, setCurrentPage] = useState<AppPages>("home");
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  // NEW: State to manage the visibility of the Complete Profile Modal
   const [showModal, setShowModal] = useState<boolean>(false);
   // 3. Application Data & UI State
   // NEW: State to manage the visibility of the Event Form
@@ -101,7 +103,7 @@ export default function App() {
   // Fetch events from backend
   const fetchEvents = async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/events");
+      const response = await fetch(`${BASE_URL}/api/events`);
       if (response.ok) {
         const result = await response.json();
         setEvents(result.data || []);
@@ -111,21 +113,18 @@ export default function App() {
     }
   };
 
-  // Check localStorage for token on initial load and restore user session
+  // Check localStorage for user on initial load and restore user session
   useEffect(() => {
-    const token = localStorage.getItem("token");
     const savedUser = localStorage.getItem("user");
 
-    if (token && savedUser) {
+    if (savedUser) {
       try {
         const user = JSON.parse(savedUser);
         setIsAuthenticated(true);
         setCurrentUser(user);
         setCurrentPage("dashboard");
-        console.log("User session restored from localStorage");
       } catch (error) {
         console.error("Error restoring user session:", error);
-        localStorage.removeItem("token");
         localStorage.removeItem("user");
       }
     } else {
@@ -161,31 +160,32 @@ export default function App() {
 
       // Save user to localStorage for persistence
       localStorage.setItem("user", JSON.stringify(fullUser));
-
+      // After successful login, navigate to dashboard
       setCurrentPage("dashboard");
-      console.log("State updated. Should redirect to dashboard.");
     }, 0);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    setIsAuthenticated(false);
-    setCurrentUser(null);
-    setCurrentPage("home"); // Logout always returns to home
-    toast.success("User logged out.");
+  const handleLogout = async () => {
+    try {
+      const response = await fetch(`${BASE_URL}/api/auth/logout`, {
+        // for access token
+        credentials: "include",
+      });
+      const data = await response.json();
+      localStorage.removeItem("user");
+      setIsAuthenticated(false);
+      setCurrentUser(null);
+      setCurrentPage("home"); // Logout always returns to home
+      toast.success(data.message);
+    } catch (error) {
+      console.error("Error logging out:", error);
+    }
   };
 
   // event/user pair //
 
   const handleCreateEvent = async (eventData: Partial<Event>) => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        console.error("No token found. User must be authenticated.");
-        return;
-      }
-
       // Prepare payload for backend
       const payload = {
         title: eventData.title,
@@ -201,12 +201,13 @@ export default function App() {
       };
 
       // Call backend API
-      const response = await fetch("http://localhost:5000/api/events", {
+      const response = await fetch(`${BASE_URL}/api/events`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-auth-token": token,
         },
+        // for access token
+        credentials: "include",
         body: JSON.stringify(payload),
       });
 
@@ -219,7 +220,7 @@ export default function App() {
       const result = await response.json();
       const createdEvent = result.data;
 
-      toast.success(result.message)
+      toast.success(result.message);
 
       // Update local state with the created event from backend
       const newEvent: Event = {
@@ -243,8 +244,6 @@ export default function App() {
 
       setEvents([newEvent, ...events]);
       setIsEventFormOpen(false);
-      console.log(`Event ${newEvent.title} created successfully in database.`);
-
       // Fetch fresh events from backend to ensure consistency
       fetchEvents();
     } catch (error) {
@@ -275,6 +274,37 @@ export default function App() {
     );
   };
 
+  const handleLoginWithGoogle = async (code: any) => {
+    try {
+      const response = await fetch(`${BASE_URL}/api/auth/google`, {
+        method: "POST",
+        body: JSON.stringify({ code }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        // for access token
+        credentials: "include",
+      });
+
+      const responseData = await response.json();
+
+      if (response.ok) {
+        if (!responseData.user.role && !responseData.user.university) {
+          setShowModal(true);
+          setCurrentPage("complete-profile");
+        } else {
+          toast.success(responseData.message);
+          handleLoginSuccess(responseData.user);
+        }
+      } else {
+        // Failure: status is 400 or 500. The error message is already in the 'data' object.
+        toast.error(responseData.message);
+      }
+    } catch (error) {
+      console.error("Network Error or Stream Failure:", error);
+    }
+  };
+
   const handleCompleteProfile = async ({
     role,
     university,
@@ -283,22 +313,14 @@ export default function App() {
     university: string;
   }) => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        console.error("No token found. User must be authenticated.");
-        return;
-      }
-      const res = await fetch(
-        "http://localhost:5000/api/users/complete-profile",
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ role, university }),
-        }
-      );
+      const res = await fetch(`${BASE_URL}/api/users/complete-profile`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ role, university }),
+        credentials: "include",
+      });
 
       const data = await res.json();
 
@@ -310,10 +332,43 @@ export default function App() {
       toast.success(data.message);
       setShowModal(false);
       handleLoginSuccess(data.user);
+      if (location.pathname === "/oauth-success") {
+        window.history.replaceState(null, "", window.location.origin);
+      }
     } catch (error) {
       console.error("Error completing profile:", error);
     }
   };
+
+  const getUserDetails = async () => {
+    try {
+      const response = await fetch(`${BASE_URL}/api/users/profile`, {
+        credentials: "include",
+      });
+      const responseData = await response.json();
+      if (response.ok) {
+        if (!responseData.user.role && !responseData.user.university) {
+          setShowModal(true);
+          setCurrentPage("complete-profile");
+        } else {
+          window.history.replaceState(null, "", window.location.origin);
+          toast.success(responseData.message);
+          handleLoginSuccess(responseData.user);
+        }
+      } else {
+        toast.error(responseData.message);
+      }
+    } catch (error) {
+      console.error("Error fetching user details:", error);
+    }
+  };
+
+
+  useEffect(() => {
+    if (location.pathname === "/oauth-success") {
+      getUserDetails();
+    }
+  }, []);
 
   // --- Render Logic: Determines which primary component to render ---
   const renderPageContent = () => {
@@ -350,7 +405,7 @@ export default function App() {
       return (
         <Register
           setCurrentPage={(p: string) => setCurrentPage(p as AppPages)}
-          onRegistrationSuccess={handleLoginSuccess}
+          handleLoginWithGoogle={handleLoginWithGoogle}
         />
       );
     }
@@ -360,7 +415,7 @@ export default function App() {
         <Login
           setCurrentPage={(p: string) => setCurrentPage(p as AppPages)}
           onLoginSuccess={handleLoginSuccess}
-          setShowModal={setShowModal}
+          handleLoginWithGoogle={handleLoginWithGoogle}
         />
       );
     }
