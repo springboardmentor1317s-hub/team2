@@ -3,17 +3,18 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { BsGithub } from "react-icons/bs";
 import { GoogleLogin } from "@react-oauth/google";
+import { BASE_URL } from "../App";
 
 interface LoginProps {
   setCurrentPage: (page: string) => void;
   onLoginSuccess: (user: any) => void;
-  setShowModal: (isOpen: boolean) => void;
+  handleLoginWithGoogle: (code: any) => void;
 }
 
 export function Login({
   setCurrentPage,
   onLoginSuccess,
-  setShowModal,
+  handleLoginWithGoogle,
 }: LoginProps) {
   const [formData, setFormData] = useState({
     email: "",
@@ -37,13 +38,15 @@ export function Login({
     e.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:5000/api/auth/login", {
+      const response = await fetch(`${BASE_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: formData.email,
           password: formData.password,
         }),
+        // for accessing the token from cookie
+        credentials: "include",
       });
 
       // 1. READ THE RESPONSE BODY ONCE HERE.
@@ -52,41 +55,8 @@ export function Login({
       if (response.ok) {
         // Success: status is 200-299
         toast.success(responseData.message);
-        localStorage.setItem("token", responseData.token);
         // Assuming this function is passed down from App.tsx
         onLoginSuccess(responseData.user);
-      } else {
-        // Failure: status is 400 or 500. The error message is already in the 'data' object.
-        toast.error(responseData.message);
-      }
-    } catch (error) {
-      console.error("Network Error or Stream Failure:", error);
-      toast.error("Failed to connect to the server.");
-    }
-  };
-
-  const handleLoginWithGoogle = async (code: any) => {
-    try {
-      const response = await fetch("http://localhost:5000/api/auth/google", {
-        method: "POST",
-        body: JSON.stringify({ code }),
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-      });
-
-      const responseData = await response.json();
-
-      if (response.ok) {
-        localStorage.setItem("token", responseData.token);
-        if (!responseData.user.role && !responseData.user.university) {
-          setShowModal(true);
-          setCurrentPage("complete-profile");
-        } else {
-          toast.success(responseData.message);
-          onLoginSuccess(responseData.user);
-        }
       } else {
         // Failure: status is 400 or 500. The error message is already in the 'data' object.
         toast.error(responseData.message);
@@ -124,8 +94,8 @@ export function Login({
             <div className="register-card">
               {/* Header */}
               <div className="register-header">
-                <h1 className="register-title">Welcome Back</h1>
-                <p className="register-subtitle">
+                <h1 className="text-[32px] font-sans text-[#76DCFA] font-bold mb-2">Welcome Back</h1>
+                <p className="text-[#94a3b8]">
                   Sign in to continue to CampusEventHub
                 </p>
               </div>
@@ -237,7 +207,7 @@ export function Login({
                 </button>
 
                 {/* Register Link */}
-                <p className="login-link">
+                <p className="text-[#94a3b8] text-center login-link">
                   Don't have an account?{" "}
                   <a
                     href="#"
@@ -247,7 +217,7 @@ export function Login({
                       setCurrentPage("register");
                     }}
                   >
-                    Register here
+                    Sign up here
                   </a>
                 </p>
               </form>
