@@ -676,7 +676,7 @@ body {
   backdrop-filter: blur(10px);
   border: 1px solid rgba(148, 163, 184, 0.3);
   border-radius: 1.5rem;
-  padding: 3rem;
+  padding: 2rem;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   animation: fadeInUp 0.8s ease-out;
 }
@@ -684,23 +684,6 @@ body {
 .register-header {
   text-align: center;
   margin-bottom: 2rem;
-}
-
-.register-title {
-  font-size: 2.5rem;
-  font-weight: 800;
-  color: white;
-  margin-bottom: 0.5rem;
-  background: linear-gradient(to right, #93c5fd, #67e8f9);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.register-subtitle {
-  font-size: 1rem;
-  color: #94a3b8;
-  margin: 0;
 }
 
 .register-form {
@@ -860,13 +843,6 @@ body {
   box-shadow: 0 15px 35px rgba(59, 130, 246, 0.4);
 }
 
-.login-link {
-  text-align: center;
-  color: #94a3b8;
-  margin-top: 1.5rem;
-  margin-bottom: 0;
-}
-
 .link-primary {
   color: #22d3ee;
   text-decoration: none;
@@ -881,14 +857,6 @@ body {
 
 /* Responsive Register Page */
 @media (max-width: 768px) {
-  .register-card {
-    padding: 2rem 1.5rem;
-  }
-
-  .register-title {
-    font-size: 2rem;
-  }
-
   .interest-chips {
     gap: 0.5rem;
   }
