@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { getEventStatus } from "../utils/eventStatus";
 import { formatDate } from "../utils/formatters";
+import CommentSection from "./CommentSection";
+import { BASE_URL } from "../App";
 
 interface EventModalProps {
   event: Event | null;
@@ -29,6 +31,28 @@ const EventModal: React.FC<EventModalProps> = ({
   isRegistered,
 }) => {
   const [activeTab, setActiveTab] = useState<"details" | "comments">("details");
+  const [commentCount, setCommentCount] = useState(0);
+
+  // Fetch comment count when modal opens
+  React.useEffect(() => {
+    if (isOpen && event) {
+      fetchCommentCount();
+    }
+  }, [isOpen, event]);
+
+  const fetchCommentCount = async () => {
+    try {
+      const response = await fetch(
+        `${BASE_URL}/api/comments/event/${event?._id}`
+      );
+      const data = await response.json();
+      if (data.success) {
+        setCommentCount(data.count || data.data?.length || 0);
+      }
+    } catch (error) {
+      console.error("Error fetching comment count:", error);
+    }
+  };
 
   if (!isOpen || !event) return null;
 
@@ -105,13 +129,17 @@ const EventModal: React.FC<EventModalProps> = ({
                 </button>
                 <button
                   onClick={() => setActiveTab("comments")}
-                  className={`whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm flex items-center ${
+                  className={`whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
                     activeTab === "comments"
                       ? "border-indigo-500 text-indigo-600"
                       : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                   }`}
                 >
-                  Comments (0)
+                  <MessageSquare className="w-4 h-4" />
+                  Comments{" "}
+                  <span className="bg-indigo-100 text-indigo-600 rounded-full px-2 text-xs font-bold">
+                    {commentCount}
+                  </span>
                 </button>
               </nav>
             </div>
@@ -200,10 +228,7 @@ const EventModal: React.FC<EventModalProps> = ({
                 </div>
               </div>
             ) : (
-              <div className="py-8 text-center text-gray-500">
-                <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                <p>No comments yet. Be the first to start the discussion!</p>
-              </div>
+              <CommentSection eventId={event._id} />
             )}
           </div>
 
