@@ -10,6 +10,7 @@ dotenv.config();
 
 const authRoutes = require("./routes/auth");
 const eventRoutes = require("./routes/events");
+const commentRoutes = require('./routes/comments');
 const connectDB = require("./config/db");
 const { port, secretKey } = require("./Constants");
 
@@ -36,12 +37,18 @@ app.get("/", (req, res) => {
   res.send("CampusEventHub Backend API is running!");
 });
 
-// Authentication routes (Register/Login)
+// Authentication routes (Register/Login/Logout)
 app.use("/api/auth", authRoutes);
-app.use("/api/users", require("./routes/user"));
-// Events routes (Get, Filter, Create)
+// User routes (Get, Update)
+app.use("/api/users", require("./routes/users"));
+// Events routes (Get, Filter, Create, Update, Delete)
 app.use("/api/events", eventRoutes);
+// Registration routes (Get, Create, Update, Delete)
 app.use("/api/registrations", require("./routes/registration"));
+// Comments routes (Get, Create, Update, Delete)
+app.use("/api/comments", commentRoutes);
+// Feedback routes (Get, Create)
+app.use("/api/feedback", require("./routes/feedback"));
 
 // --- Start Server ---
 app.listen(port, () => {
