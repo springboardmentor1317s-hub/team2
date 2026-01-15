@@ -35,13 +35,9 @@ const registerUser = async (req, res) => {
       authProvider: "local",
     });
 
-    // 3. Create a token for immediate login
-    const token = createToken(user._id);
-
     res.status(201).json({
       success: true,
       message: "Registration successful!",
-      token,
       // Return safe user data
       user: {
         id: user._id,
@@ -91,13 +87,18 @@ const loginUser = async (req, res) => {
         .json({ success: false, message: "Invalid credentials" });
     }
 
-    // 3. Create a token and send response
+    // 3. Create a token and set it as a cookie
     const token = createToken(user._id);
+
+    res.cookie("token", token, {
+      httpOnly: true,
+      signed: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
 
     res.status(200).json({
       success: true,
       message: "Login successful!",
-      token,
       user: {
         id: user._id,
         fullName: user.fullName,
@@ -122,10 +123,11 @@ const loginWithGoogle = async (req, res) => {
     return res.json({ message: "Invalid credentials!" });
   }
   try {
+    // Verify the Google code
     const { name, email, picture, email_verified } = await verifyGoogleCode(
       code
     );
-
+    // Check if the email is verified
     if (!email_verified) {
       return res.status(401).json({
         success: false,
@@ -143,10 +145,15 @@ const loginWithGoogle = async (req, res) => {
         authProvider: "google",
       });
       const token = createToken(user._id);
+      // Set the token as a cookie
+      res.cookie("token", token, {
+        httpOnly: true,
+        signed: true,
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
       res.status(200).json({
         success: true,
         message: "Login successful!",
-        token,
         user: {
           id: user._id,
           fullName: name,
@@ -158,10 +165,15 @@ const loginWithGoogle = async (req, res) => {
     } else {
       // If the user already exists, return the user's details
       const token = createToken(user._id);
+      // Set the token as a cookie
+      res.cookie("token", token, {
+        httpOnly: true,
+        signed: true,
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
       res.status(200).json({
         success: true,
         message: "Login successful!",
-        token,
         user: {
           id: user._id,
           fullName: user.fullName,
@@ -191,7 +203,7 @@ const loginWithGithub = async (req, res) => {
       message: "Missing code or state",
     });
   }
-
+  // Decode the state
   const decodedState = JSON.parse(
     Buffer.from(state, "base64").toString("utf-8")
   );
@@ -199,6 +211,7 @@ const loginWithGithub = async (req, res) => {
   const { clientOrigin } = decodedState;
 
   try {
+    // Verify the GitHub code
     const { email, name, picture } = await githubClient.getUserDetails(code);
 
     if (!email) {
@@ -219,8 +232,14 @@ const loginWithGithub = async (req, res) => {
         authProvider: "github",
       });
     }
-
-    res.redirect(`${clientOrigin}`);
+    const token = createToken(user._id);
+    res.cookie("token", token, {
+      httpOnly: true,
+      signed: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+     // redirect to the client origin
+    res.redirect(`${clientOrigin}/oauth-success`);
   } catch (error) {
     console.error("GitHub login error:", error);
   }
@@ -228,22 +247,33 @@ const loginWithGithub = async (req, res) => {
 
 const redirectToAuthURL = async (req, res) => {
   const referer = req.get("referer");
+  // Get the client origin
   const clientOrigin = referer ? new URL(referer).origin : null;
+  // Get the GitHub authorization URL
   const { state: githubState, url } = githubClient.getWebFlowAuthorizationUrl({
     scopes: ["read:user", "user:email"],
     redirectUrl: `http://localhost:5000/api/auth/github/callback`,
   });
-
+  // Create a combined state
   const combinedState = Buffer.from(
     JSON.stringify({
       githubState,
       clientOrigin,
     })
   ).toString("base64");
-
+  
   const redirectURL = `${url}&state=${combinedState}`;
+  // Redirect to the GitHub authorization URL
   res.redirect(redirectURL);
   res.end();
+};
+
+const logoutUser = async (req, res) => {
+  // Clear the token cookie
+  res
+    .clearCookie("token")
+    .status(200)
+    .json({ success: true, message: "Logout successful!" });
 };
 
 module.exports = {
@@ -252,4 +282,5 @@ module.exports = {
   loginWithGoogle,
   redirectToAuthURL,
   loginWithGithub,
+  logoutUser,
 };
