@@ -10,17 +10,20 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { BASE_URL } from "../App";
+import { BsGithub } from "react-icons/bs";
+import { GoogleLogin } from "@react-oauth/google";
 
 // Add props definition to Register if you want to switch to login view on success
 interface RegisterProps {
   setCurrentPage: (page: string) => void;
-  onRegistrationSuccess: (user: any) => void;
+  handleLoginWithGoogle: (code: any) => void;
 }
 
 // Update the function signature to accept the props
 export function Register({
   setCurrentPage,
-  onRegistrationSuccess,
+  handleLoginWithGoogle,
 }: RegisterProps) {
   const [formData, setFormData] = useState({
     fullName: "",
@@ -63,11 +66,11 @@ export function Register({
 
     // Destructure the data we need, excluding the client-side only fields
     const { confirmPassword, agreeToTerms, ...dataToSend } = formData;
-// 💡 NEW DIAGNOSTIC LINE
-   /* console.log('Payload being sent:', JSON.stringify(dataToSend)); */
+    // 💡 NEW DIAGNOSTIC LINE
+    /* console.log('Payload being sent:', JSON.stringify(dataToSend)); */
     // 2. API Call
     try {
-      const response = await fetch("http://localhost:5000/api/auth/register", {
+      const response = await fetch(`${BASE_URL}/api/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -75,22 +78,18 @@ export function Register({
         body: JSON.stringify(dataToSend),
       });
 
-       const responseData = await response.json();
-       
+      const responseData = await response.json();
       if (response.ok) {
-       
-        localStorage.setItem("token", responseData.token);
-        toast.success(responseData.message) // New log for confirmation
-        
-        // 🔑 Trigger the success handler to redirect to Dashboard
-        onRegistrationSuccess(responseData.user);
+        toast.success(responseData.message); // New log for confirmation
+
+        setCurrentPage("login");
+        // onRegistrationSuccess(responseData.user);
       } else {
         // Handle errors like 'User already exists'
-        toast.error(responseData.message)
+        toast.error(responseData.message);
       }
     } catch (error) {
       console.error("Network Error:", error);
-      toast.error("Failed to connect to the server");
     }
   };
 
@@ -122,10 +121,42 @@ export function Register({
             <div className="register-card">
               {/* Header */}
               <div className="register-header">
-                <h1 className="register-title">Create Account</h1>
-                <p className="register-subtitle">
-                  Join CampusEventHub and start discovering amazing events
+                <h1 className="text-[34px] font-sans text-[#76DCFA] font-bold mb-2">
+                  Create Account
+                </h1>
+                <p className="text-[#94a3b8]">
+                  Enter your details or sign up with social media
                 </p>
+              </div>
+
+              <div className="social-login">
+                <GoogleLogin
+                  onSuccess={(credentialResponse) => {
+                    handleLoginWithGoogle(credentialResponse.credential);
+                  }}
+                  theme="outline"
+                  text="continue_with"
+                  shape="rectangular"
+                  logo_alignment="center"
+                  onError={() => {
+                    toast.error("Login Failed");
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() =>
+                    (window.location.href =
+                      "http://localhost:5000/api/auth/github")
+                  }
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 rounded-lg bg-white text-[15px] text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
+                >
+                  <BsGithub />
+                  Continue with GitHub
+                </button>
+              </div>
+
+              <div className="divider">
+                <span className="divider-text">Or sign up with email</span>
               </div>
 
               {/* Form */}
@@ -196,7 +227,6 @@ export function Register({
                     <option value="">Select your role</option>
                     <option value="student">student</option>
                     <option value="admin">Admin</option>
-
                   </select>
                 </div>
 
@@ -301,7 +331,7 @@ export function Register({
                 </button>
 
                 {/* Login Link */}
-                <p className="login-link">
+                <p className="text-[#94a3b8] text-center login-link">
                   Already have an account?{" "}
                   <a
                     href="#"
@@ -311,7 +341,7 @@ export function Register({
                       setCurrentPage("login");
                     }}
                   >
-                    Register here
+                    Sign in here
                   </a>
                 </p>
               </form>
