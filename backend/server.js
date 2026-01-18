@@ -56,6 +56,9 @@ app.use('/api/comments', commentRoutes);
 // Registration routes (Apply, Approve/Reject)
 app.use('/api/registrations', require('./routes/registration'));
 
+// notification routes (Get, notifications)
+app.use('/api/notifications', require('./routes/notification'));
+
 // --- Start Server ---
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
