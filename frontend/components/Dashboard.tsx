@@ -1,1327 +1,1932 @@
-import React, { useState, useEffect } from "react";
-import {
-  Users,
-  Calendar,
-  TrendingUp,
-  Activity,
-  AlertCircle,
-  Plus,
-  FileText,
-  CheckCircle,
-  Filter,
-  Shield,
-  MoreHorizontal,
-  LayoutDashboard,
-  Clock,
-  Check,
-  X as XIcon,
-  Download,
-  Home,
-  ChevronRight,
-  LogOut,
-  Settings,
-  ClipboardList,
-  BarChart,
-  Moon,
-  Sun,
-  Search,
-  Compass,
-  Bell,
-  User,
-} from "lucide-react";
-import {
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  LineChart,
-  Line,
-} from "recharts";
-import { useTheme } from "../context/ThemeContext";
-import { formatDate } from "../utils/formatters";
-import { getEventStatus } from "../utils/eventStatus";
+@import url("https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css");
 
-// --- 💡 MOCK STRUCTURES (From your previous working code) ---
-// Define the roles explicitly for comparison
-
-const UserRole = {
-  STUDENT: "student",
-  ADMIN: "admin",
-};
-
-// Mock User structure based on what you pass from App.tsx
-interface AppUser {
-  id?: string; // Added ID for helper functions
-  fullName: string;
-  university: string;
-  role: "student" | "admin";
-}
-
-const MOCK_REGISTRATIONS = [
-  {
-    id: "r1",
-    userId: "u1",
-    eventId: "e1",
-    timestamp: new Date(),
-    status: "approved",
-  },
-  {
-    id: "r2",
-    userId: "u1",
-    eventId: "e2",
-    timestamp: new Date(),
-    status: "pending",
-  },
-  {
-    id: "r3",
-    userId: "u2",
-    eventId: "e1",
-    timestamp: new Date(),
-    status: "approved",
-  },
-  {
-    id: "r4",
-    userId: "u3",
-    eventId: "e2",
-    timestamp: new Date(),
-    status: "pending",
-  },
-];
-const MOCK_ALL_USERS = [
-  {
-    id: "u1",
-    name: "Ajay S.",
-    university: "Mahendra College",
-    role: UserRole.STUDENT,
-    lastActive: "2 hours ago",
-    status: "Active",
-  },
-  {
-    id: "u2",
-    name: "Admin B.",
-    university: "Surya University",
-    role: UserRole.ADMIN,
-    lastActive: "1 day ago",
-    status: "Active",
-  },
-  {
-    id: "u3",
-    name: "Admin Z.",
-    university: "Global Campus",
-    role: UserRole.ADMIN,
-    lastActive: "10 mins ago",
-    status: "Active",
-  },
-];
-const MOCK_ADMIN_LOGS = [
-  {
-    id: "l1",
-    timestamp: new Date(),
-    userId: "u3",
-    action: "Approved User",
-    details: "Ajay S. approved by Admin Z.",
-    status: "completed",
-  },
-  {
-    id: "l2",
-    timestamp: new Date(),
-    userId: "u1",
-    action: "Flagged Content",
-    details: "Event 'Test Event' flagged for review.",
-    status: "pending",
-  },
-];
-
-const allUsers = MOCK_ALL_USERS;
-const adminLogs = MOCK_ADMIN_LOGS;
-// 🔑 ADD THIS BLOCK BACK for the Registration Trends Chart
-const data = [
-  { name: "Nov 2024", events: 15, participants: 1200 },
-  { name: "Dec 2024", events: 20, participants: 1600 },
-  { name: "Jan 2025", events: 12, participants: 980 },
-  { name: "Feb 2025", events: 14, participants: 1150 },
-  { name: "Mar 2025", events: 17, participants: 1350 },
-];
-
-// --- DASHBOARD PROPS (Simplified to use working components/functions) ---
-interface DashboardProps {
-  user: AppUser;
-  handleLogout: () => void; // From App.tsx
-  setCurrentPage: (page: string) => void; // From App.tsx
-  // Optional props for actions (you may need to implement these functions in App.tsx)
-  onCreateEventClick: () => void;
-  onUpdateRegistrationStatus?: (
-    id: string,
-    status: "approved" | "rejected"
-  ) => void;
-  onDeleteEvent?: (eventId: string) => void;
-  onDeleteUser?: (userId: string) => void;
-  children?: React.ReactNode; // Add children prop to render custom content
-}
-
-// --- STAT CARD UTILITY COMPONENT (No Change) ---
-const StatCard: React.FC<any> = ({
-  title,
-  value,
-  change,
-  isPositive,
-  icon,
-  color,
-}) => (
-  <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex items-start justify-between">
-    <div>
-      <p className="text-sm font-medium text-gray-500 mb-1">{title}</p>
-      <h3 className="text-2xl font-bold text-gray-900">{value}</h3>
-      {change && (
-        <p
-          className={`text-xs mt-2 font-medium ${
-            isPositive ? "text-green-600" : "text-red-600"
-          }`}
-        >
-          {isPositive ? "+" : ""}
-          {change}{" "}
-          <span className="text-gray-400 font-normal">vs last month</span>
-        </p>
-      )}
-    </div>
-    <div className={`p-3 rounded-lg ${color} text-white`}>{icon}</div>
-  </div>
-);
-
-export function Dashboard({
-  user,
-  handleLogout,
-  setCurrentPage,
-  onCreateEventClick,
-  onUpdateRegistrationStatus,
-  onDeleteEvent,
-  onDeleteUser,
-  children,
-}: DashboardProps) {
-  const { theme, toggleTheme } = useTheme();
-  const [activeTab, setActiveTab] = useState("overview");
-  const [isCollapsed, setIsCollapsed] = useState(true);
-  const [registrations, setRegistrations] = useState<any[]>([]);
-  // 🔑 NEW: Dynamic State for Live Events
-  const [events, setEvents] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  // --- 🔑 UPDATED CONNECTION LOGIC ---
-  // We use lowercase comparison to match the backend exactly
-  const isAdmin = user.role === "admin";
-  const isStudent = user.role === "student";
-
-  // 🔑 ADD THESE HELPER FUNCTIONS BACK:
-  const getEventName = (id: string) =>
-    events.find((e) => (e._id || e.id) === id)?.title || "Unknown Event";
-
-  const getCollegeName = (id: string) =>
-    events.find((e) => (e._id || e.id) === id)?.collegeName || "N/A";
-
-  const getUserName = (id: string) =>
-    allUsers.find((u) => u.id === id)?.name || "Unknown User";
-
-  const getAdminName = (id: string) =>
-    allUsers.find((u) => u.id === id)?.name || "System";
-
-  const handleUpdateRegistrationStatus = async (
-    id: string,
-    status: "approved" | "rejected"
-  ) => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `http://localhost:5000/api/registrations/${id}/status`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ status }),
-        }
-      );
-
-      if (response.ok) {
-        // 🔑 Update local state immediately so the UI refreshes
-        setRegistrations((prev) =>
-          prev.map((reg) =>
-            reg._id === id ? { ...reg, status, reviewedBy: user.fullName } : reg
-          )
-        );
-        alert(`Registration ${status}!`);
-      }
-    } catch (error) {
-      console.error("Error updating status:", error);
+/*! tailwindcss v4.1.3 | MIT License | https://tailwindcss.com */
+@layer properties {
+  @supports (((-webkit-hyphens: none)) and (not (margin-trim: inline))) or ((-moz-orient: inline) and (not (color: rgb(from red r g b)))) {
+    *, :before, :after, ::backdrop {
+      --tw-blur: initial;
+      --tw-brightness: initial;
+      --tw-contrast: initial;
+      --tw-grayscale: initial;
+      --tw-hue-rotate: initial;
+      --tw-invert: initial;
+      --tw-opacity: initial;
+      --tw-saturate: initial;
+      --tw-sepia: initial;
+      --tw-drop-shadow: initial;
+      --tw-drop-shadow-color: initial;
+      --tw-drop-shadow-alpha: 100%;
+      --tw-drop-shadow-size: initial;
     }
-  };
-
-  const handleDeleteRegistration = (id: string) => {
-    setRegistrations((prev) => prev.filter((reg) => reg.id !== id));
-  };
-
-  // 🔑 NEW: Fetch events from database
-
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const token = localStorage.getItem("token");
-
-        // 1. Fetch Events (You already have this, but ensure it matches backend structure)
-        const eventRes = await fetch("http://localhost:5000/api/events");
-        const eventResult = await eventRes.json();
-        if (eventResult.success) setEvents(eventResult.data);
-
-        // 2. Fetch Registrations (🔑 NEW)
-        // If Admin: fetch /all, If Student: fetch /my
-        const regUrl = isAdmin
-          ? "http://localhost:5000/api/registrations/all"
-          : "http://localhost:5000/api/registrations/my";
-
-        const regRes = await fetch(regUrl, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const regData = await regRes.json();
-        setRegistrations(regData);
-      } catch (error) {
-        console.error("Dashboard Fetch Error:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, [user.role]); // Refetch if role changes
-
-  // --- Calculation Stubs (Needed for StatCards) ---
-  const totalParticipants = events.reduce(
-    (sum, e) => sum + (e.participantsCount || 0),
-    0
-  );
-  const averageParticipants =
-    events.length > 0 ? (totalParticipants / events.length).toFixed(1) : "0";
-
-  // 🔑 FIX: Re-defining the missing variable
-  const dashboardRegistrations = isStudent
-    ? registrations.filter(
-        (r) =>
-          r.userId === MOCK_ALL_USERS.find((u) => u.name === user.fullName)?.id
-      )
-    : registrations;
-
-  // 🔑 NEW: Filter events for admin - show only events created by this admin
-  const adminOwnedEvents = isAdmin
-    ? events.filter((event) => {
-        // Compare adminId with user.id
-        // adminId could be a string or ObjectId, and could be stored as _id property
-        const eventAdminId = String(event.adminId || event.admin?._id || "");
-        const userId = String(user.id || "");
-        const isMatch = eventAdminId === userId;
-        return isMatch;
-      })
-    : events;
-
-  // 🔑 NEW: Filter registrations for admin - show only registrations for events they created
-  const adminOwnedRegistrations = isAdmin
-    ? registrations.filter((reg) => {
-        // Get the event ID from registration
-        const eventId = String(reg.eventId || reg.event?._id || "");
-        // Check if this event is in the admin's owned events
-        const isOwnedEvent = adminOwnedEvents.some((event) => {
-          const eid = String(event._id || event.id || "");
-          return eid === eventId;
-        });
-        return isOwnedEvent;
-      })
-    : registrations;
-
-  // Create CSV content
-  const handleExportData = () => {
-    const headers = [
-      "Event Name",
-      "Category",
-      "Location",
-      "Start Date",
-      "Status",
-      "Participants Count",
-      "Max Participants",
-    ];
-    const csvRows = events.map((event) =>
-      [
-        `"${event.title}"`,
-        event.category,
-        `"${event.location}"`,
-        formatDate(event.startDate),
-        getEventStatus(event.startDate, event.endDate),
-        event.participantsCount,
-        event.maxParticipants,
-      ].join(",")
-    );
-
-    const csvString = [headers.join(","), ...csvRows].join("\n");
-
-    // Create blob and download link
-    const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-
-    link.setAttribute("href", url);
-    link.setAttribute(
-      "download",
-      `events_export_${new Date().toISOString().split("T")[0]}.csv`
-    );
-    link.style.visibility = "hidden";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  // --- Tabs Configuration ---
-  const adminTabs = [
-    "Overview",
-    "Discover Events",
-    "User Management",
-    "Event Management",
-    "Registrations",
-    "Admin Logs",
-  ];
-  const studentTabs = ["Overview", "Discover Events", "My Events"];
-  const currentTabs = isAdmin ? adminTabs : studentTabs;
-
-  // Layout helper
-  const isFullWidth = [
-    "user management",
-    "event management",
-    "registrations",
-    "admin logs",
-    "my events",
-  ].includes(activeTab);
-
-  // --- TABLE COMPONENTS (Updated to use MOCK data and props) ---
-
-  const RecentEventsTable = ({
-    events: eventList,
-    limit,
-  }: {
-    events: any[];
-    limit?: number;
-  }) => (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-        <h3 className="font-semibold text-gray-900">
-          {activeTab === "event management"
-            ? "Event Management"
-            : "Recent Events"}
-        </h3>
-        {isAdmin && activeTab === "event management" && (
-          <button className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
-            Approve Pending Flagged Events
-          </button>
-        )}
-        {!isAdmin && activeTab !== "event management" && (
-          <button
-            onClick={() => setCurrentPage("discover")}
-            className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
-          >
-            View All
-          </button>
-        )}
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left">
-          <thead className="text-xs text-gray-500 uppercase bg-gray-50/50">
-            <tr>
-              <th className="px-6 py-3 font-medium">Event Name</th>
-              <th className="px-6 py-3 font-medium">Category</th>
-              <th className="px-6 py-3 font-medium">Date</th>
-              <th className="px-6 py-3 font-medium">Status</th>
-              {isAdmin && (
-                <th className="px-6 py-3 font-medium text-right">Actions</th>
-              )}
-            </tr>
-          </thead>
-          <tbody>
-            {eventList.slice(0, limit || eventList.length).map((event) => (
-              <tr
-                key={event._id || event.id}
-                className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors"
-              >
-                <td className="px-6 py-4 font-medium text-gray-900">
-                  <div className="flex items-center">
-                    <div className="w-8 h-8 rounded bg-indigo-100 text-indigo-600 flex items-center justify-center mr-3">
-                      <Calendar className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="font-medium line-clamp-1">
-                        {event.title}
-                      </div>
-                      <div className="text-xs text-gray-500 line-clamp-1">
-                        {event.location}
-                      </div>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 capitalize">
-                    {event.category}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-gray-500">
-                  {formatDate(event.startDate)}
-                </td>
-                <td className="px-6 py-4">
-                  <span
-                    className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize ${
-                      getEventStatus(event.startDate, event.endDate) ===
-                      "upcoming"
-                        ? "bg-blue-50 text-blue-600"
-                        : getEventStatus(event.startDate, event.endDate) ===
-                          "ongoing"
-                        ? "bg-green-50 text-green-600"
-                        : "bg-gray-100 text-gray-600"
-                    }`}
-                  >
-                    {getEventStatus(event.startDate, event.endDate)}
-                  </span>
-                </td>
-                {isAdmin && (
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-2">
-                      <button className="text-indigo-600 hover:text-indigo-800 text-xs font-medium hover:underline p-1">
-                        View
-                      </button>
-                      {onDeleteEvent && (
-                        <button
-                          onClick={() => onDeleteEvent(event.id)}
-                          className="text-red-600 hover:bg-red-50 p-1 rounded"
-                          title="Delete Event"
-                        >
-                          <XIcon className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                )}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-
-  const UserActivityTable = () => (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-        <h3 className="font-semibold text-gray-900">User Activity</h3>
-        <button className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
-          View All Users
-        </button>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left">
-          <thead className="text-xs text-gray-500 uppercase bg-gray-50/50">
-            <tr>
-              <th className="px-6 py-3 font-medium">User</th>
-              <th className="px-6 py-3 font-medium">Role</th>
-              <th className="px-6 py-3 font-medium">College</th>
-              <th className="px-6 py-3 font-medium">Last Active</th>
-              <th className="px-6 py-3 font-medium">Status</th>
-              {isAdmin && (
-                <th className="px-6 py-3 font-medium text-right">Actions</th>
-              )}
-            </tr>
-          </thead>
-          <tbody>
-            {allUsers.map((u) => (
-              <tr
-                key={u.id}
-                className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors"
-              >
-                <td className="px-6 py-4 font-medium text-gray-900">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold uppercase ${
-                        u.role === UserRole.STUDENT
-                          ? "bg-blue-100 text-blue-700"
-                          : u.role === UserRole.ADMIN
-                          ? "bg-purple-100 text-purple-700"
-                          : "bg-orange-100 text-orange-700"
-                      }`}
-                    >
-                      {u.name.charAt(0)}
-                    </div>
-                    {u.name}
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <span
-                    className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize ${
-                      u.role === UserRole.STUDENT
-                        ? "bg-green-100 text-green-700"
-                        : "bg-gray-100 text-gray-700"
-                    }`}
-                  >
-                    {u.role}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-gray-500">
-                  {u.university || "-"}
-                </td>
-                <td className="px-6 py-4 text-gray-500">
-                  {u.lastActive || "Never"}
-                </td>
-                <td className="px-6 py-4">
-                  <span
-                    className={`text-xs font-medium ${
-                      u.status === "Active" ? "text-green-600" : "text-gray-400"
-                    }`}
-                  >
-                    {u.status || "Active"}
-                  </span>
-                </td>
-                {isAdmin && (
-                  <td className="px-6 py-4 text-right">
-                    {onDeleteUser && (
-                      <button
-                        onClick={() => onDeleteUser(u.id)}
-                        className="text-gray-400 hover:text-red-600 p-1 transition-colors"
-                        title="Ban/Delete User"
-                      >
-                        <XIcon className="w-4 h-4" />
-                      </button>
-                    )}
-                  </td>
-                )}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-
-  const RegistrationsTable = ({
-    registrations: regList,
-    showAdminActions = true,
-  }: {
-    registrations: any[];
-    showAdminActions?: boolean;
-  }) => (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-        <h3 className="font-semibold text-gray-900">Event Registrations</h3>
-        <div className="flex gap-2">
-          <button className="p-1.5 text-gray-500 hover:bg-gray-100 rounded-lg">
-            <Filter className="w-4 h-4" />
-          </button>
-          <button
-            onClick={handleExportData}
-            className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
-          >
-            Export CSV
-          </button>
-        </div>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left">
-          <thead className="text-xs text-gray-500 uppercase bg-gray-50/50">
-            <tr>
-              <th className="px-6 py-3 font-medium">Student</th>
-              <th className="px-6 py-3 font-medium">Event</th>
-              <th className="px-6 py-3 font-medium">Date Registered</th>
-              <th className="px-6 py-3 font-medium">Status</th>
-              <th className="px-6 py-3 font-medium text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {regList.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
-                  No registrations found.
-                </td>
-              </tr>
-            ) : (
-              regList.map((reg) => (
-                <tr
-                  key={reg._id} // 🔑 Changed from reg.id to reg._id
-                  className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors"
-                >
-                  <td className="px-6 py-4 font-medium text-gray-900">
-                    {/* 🔑 Logic: Get name from populated student object */}
-                    {reg.student?.fullName || "User"}
-                  </td>
-                  <td className="px-6 py-4 text-gray-600">
-                    {/* 🔑 Logic: Get title from populated event object */}
-                    {reg.event?.title || "Event Details"}
-                  </td>
-                  <td className="px-6 py-4 text-gray-500">
-                    {/* 🔑 Logic: Use appliedAt date from DB */}
-                    {formatDate(reg.appliedAt || reg.createdAt)}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize ${
-                        reg.status === "approved"
-                          ? "bg-green-100 text-green-700"
-                          : reg.status === "rejected"
-                          ? "bg-red-100 text-red-700"
-                          : "bg-yellow-100 text-yellow-700"
-                      }`}
-                    >
-                      {reg.status}
-                    </span>
-                  </td>
-
-                  <td className="px-6 py-4 text-right">
-                    {showAdminActions && reg.status === "pending" ? (
-                      <div className="flex justify-end gap-2">
-                        <button
-                          onClick={() =>
-                            handleUpdateRegistrationStatus(reg._id, "approved")
-                          }
-                          className="p-1 text-green-600 hover:bg-green-50 rounded"
-                          title="Approve"
-                        >
-                          <Check className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() =>
-                            handleUpdateRegistrationStatus(reg._id, "rejected")
-                          }
-                          className="p-1 text-red-600 hover:bg-red-50 rounded"
-                          title="Reject"
-                        >
-                          <XIcon className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ) : showAdminActions ? (
-                      <div className="text-xs text-gray-400 italic">
-                        Processed
-                      </div>
-                    ) : reg.status === "pending" ? (
-                      <div className="text-xs text-yellow-600 font-medium italic">
-                        Waiting...
-                      </div>
-                    ) : (
-                      <div className="text-xs text-gray-600 font-medium">
-                        {getCollegeName(
-                          reg.eventId || reg.event?._id || reg.event?.id
-                        )}
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-
-  const AdminLogsTable = () => (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-        <h3 className="font-semibold text-gray-900">System Logs</h3>
-        <button className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">
-          <Download className="w-4 h-4" /> Download
-        </button>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left">
-          <thead className="text-xs text-gray-500 uppercase bg-gray-50/50">
-            <tr>
-              <th className="px-6 py-3 font-medium">Timestamp</th>
-              <th className="px-6 py-3 font-medium">Admin</th>
-              <th className="px-6 py-3 font-medium">Action</th>
-              <th className="px-6 py-3 font-medium">Details</th>
-            </tr>
-          </thead>
-          <tbody>
-            {adminLogs.map((log) => (
-              <tr
-                key={log.id}
-                className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors"
-              >
-                <td className="px-6 py-4 text-gray-500 whitespace-nowrap">
-                  <div className="flex items-center">
-                    <Clock className="w-3 h-3 mr-2 text-gray-400" />
-                    {formatDate(log.timestamp)}
-                  </div>
-                </td>
-                <td className="px-6 py-4 font-medium text-gray-900">
-                  {getAdminName(log.userId)}
-                </td>
-                <td className="px-6 py-4">
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
-                    {log.action}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-gray-600 max-w-xs truncate">
-                  {log.details}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-
-  // --- MAIN RETURN ---
-
-  return (
-    <div className="dashboard-layout flex h-screen bg-gray-50 dark:bg-gray-900">
-      {/* 1. Sidebar Navigation */}
-      <aside
-        className={`
-                 dark:bg-gray-800 shadow-2xl flex flex-col justify-between 
-                transition-all duration-300 ease-in-out z-50 
-                ${isCollapsed ? "w-20" : "w-64"}
-            `}
-        onMouseEnter={() => setIsCollapsed(false)}
-        onMouseLeave={() => setIsCollapsed(true)}
-      >
-        <div className="flex flex-col h-full">
-          <div className="logo-section px-3 pt-5 pb-8 overflow-hidden">
-            <h1
-              className={`font-extrabold text-xl text-indigo-700 dark:text-indigo-400 whitespace-nowrap 
-                                    ${
-                                      isCollapsed
-                                        ? "opacity-0 h-0"
-                                        : "opacity-100 h-auto transition-opacity duration-300"
-                                    }`}
-            >
-              CampusEventHub
-            </h1>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 capitalize">
-              {user.role} Portal
-            </p>
-            {isCollapsed && (
-              <LayoutDashboard className="w-8 h-8 text-indigo-600 mx-auto" />
-            )}
-          </div>
-
-          <nav className="nav-menu space-y-2">
-            {currentTabs.map((tab) => {
-              const tabLower = tab.toLowerCase();
-              return (
-                <button
-                  key={tab}
-                  onClick={() => {
-                    if (tabLower.includes("discover")) {
-                      // If 'Discover Events' is clicked, redirect the main App page
-                      setCurrentPage("discover");
-                      setActiveTab(tabLower); // Also set active tab for styling
-                    } else if (children && !tabLower.includes("discover")) {
-                      // If children are shown (EventsDiscoveryPage) and user clicks a non-discover tab, navigate back to dashboard
-                      setCurrentPage("dashboard");
-                      setActiveTab(tabLower);
-                    } else {
-                      // For all other tabs, stay on the dashboard and switch content
-                      setActiveTab(tabLower);
-                    }
-                  }}
-                  className={`w-full flex items-center p-3 rounded-lg font-medium text-sm transition-all duration-200 
-                               ${
-                                 (children && tabLower.includes("discover")) ||
-                                 activeTab === tabLower
-                                   ? "bg-indigo-500 text-white shadow-md"
-                                   : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                               }
-                              `}
-                >
-                  {tab === "Overview" ? (
-                    <Home
-                      className={`w-5 h-5 ${!isCollapsed ? "mr-3" : "mx-auto"}`}
-                    />
-                  ) : tab === "Discover Events" ? (
-                    <Compass
-                      className={`w-5 h-5 ${!isCollapsed ? "mr-3" : "mx-auto"}`}
-                    /> // <-- NEW DISCOVER TAB
-                  ) : tab === "My Events" || tab === "Event Management" ? (
-                    <Calendar
-                      className={`w-5 h-5 ${!isCollapsed ? "mr-3" : "mx-auto"}`}
-                    />
-                  ) : tab === "User Management" ? (
-                    <Users
-                      className={`w-5 h-5 ${!isCollapsed ? "mr-3" : "mx-auto"}`}
-                    />
-                  ) : tab === "Registrations" ? (
-                    <ClipboardList
-                      className={`w-5 h-5 ${!isCollapsed ? "mr-3" : "mx-auto"}`}
-                    />
-                  ) : tab === "Analytics" ? (
-                    <TrendingUp
-                      className={`w-5 h-5 ${!isCollapsed ? "mr-3" : "mx-auto"}`}
-                    />
-                  ) : tab === "Admin Logs" ? (
-                    <FileText
-                      className={`w-5 h-5 ${!isCollapsed ? "mr-3" : "mx-auto"}`}
-                    />
-                  ) : tab === "Event Management" ? (
-                    <Activity
-                      className={`w-5 h-5 ${!isCollapsed ? "mr-3" : "mx-auto"}`}
-                    />
-                  ) : (
-                    <Settings
-                      className={`w-5 h-5 ${!isCollapsed ? "mr-3" : "mx-auto"}`}
-                    />
-                  )}
-                  {/* TEXT - Hidden when collapsed */}
-                  <span
-                    className={`whitespace-nowrap ${
-                      isCollapsed ? "hidden" : ""
-                    }`}
-                  >
-                    {tab}
-                  </span>
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-
-        {/* 🔑 NEW: Profile and Notification Icons (Always visible in collapsed state) */}
-        <div className="mt-auto px-2 py-4 border-t border-gray-200 dark:border-gray-700">
-          {/* 1. Notification Bell - The entire button is the hover group */}
-          <button
-            className="group w-full flex items-center justify-center p-3 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors relative"
-            title="Notifications"
-          >
-            <Bell className="w-5 h-5 mx-auto" />
-            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
-
-            {/* 🔑 FIXED TOOLTIP VISIBILITY AND POSITIONING */}
-            <span
-              className={`
-                    whitespace-nowrap absolute z-50 
-                    
-                    /* Positioning: Pin to the right of the sidebar's 5rem (w-20) width */
-                    left-full top-1/2 -translate-y-1/2 ml-2 
-
-                    /* Appearance: HIDDEN by default (opacity-0) */
-                    bg-gray-900 text-white text-xs px-2 py-1 rounded shadow-lg 
-                    opacity-0 
-                    
-                    /* 🚨 CRITICAL FIX: Only show text on HOVER AND when the sidebar IS collapsed */
-                    ${isCollapsed ? "group-hover:opacity-100" : "hidden"} 
-                    
-                    transition-opacity duration-300 pointer-events-none
-                `}
-            >
-              3 New Alerts
-            </span>
-          </button>
-
-          {/* 2. Profile Icon/Picture */}
-          <div className="w-full mt-2 flex justify-center">
-            {isCollapsed ? (
-              // Collapsed State: Shows Initial/Generic Icon
-              <div className="w-6 h-6 rounded-full bg-indigo-200 dark:bg-indigo-700 flex items-center justify-center text-indigo-800 dark:text-white font-bold text-sm">
-                {/* Shows first initial of user name */}
-                {user.fullName.charAt(0)}
-              </div>
-            ) : (
-              // Expanded State: Shows Name and Role (Optional: This is the old logout/profile area replacement)
-              <div className="flex items-center gap-3 w-full p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <User className="w-5 h-5 text-indigo-600 dark:text-white" />
-                <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
-                  {user.fullName}
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-          {/* Theme Toggle Button */}
-          <button
-            onClick={toggleTheme}
-            className="w-full flex items-center justify-between p-3 mb-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-          >
-            <span className="flex items-center gap-3">
-              {theme === "light" ? (
-                <Moon className="w-5 h-5" />
-              ) : (
-                <Sun className="w-5 h-5 text-yellow-400" />
-              )}
-              <span
-                className={`text-sm font-medium whitespace-nowrap ${
-                  isCollapsed ? "hidden" : ""
-                }`}
-              >
-                {theme === "light" ? "Dark Mode" : "Light Mode"}
-              </span>
-            </span>
-          </button>
-          {/* Logout Button */}
-
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center justify-start p-3 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors font-medium"
-          >
-            {" "}
-            <LogOut className="w-5 h-5 mr-3" />
-            <span
-              className={`w-5 h-5 ${!isCollapsed ? "mr-3" : "mx-auto"}`}
-            ></span>
-            {/* Text hides */}
-            <span
-              className={`whitespace-nowrap ${isCollapsed ? "hidden" : ""}`}
-            >
-              Log Out
-            </span>
-          </button>
-        </div>
-      </aside>
-      {/* 2. Main Content Area */}
-      <main className="main-content flex-1 p-8 overflow-y-auto">
-        <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            {/* Header/Greeting */}
-            <div>
-              <h1 className="text-2xl font-bold inline-block px-4 py-2">
-                👋 {isAdmin ? "Admin Dashboard" : "My Dashboard"}
-              </h1>
-              <p className="text-gray-500 text-sm mt-1">
-                {isAdmin
-                  ? "Manage platform, events, and monitor performance"
-                  : `Welcome back, ${user.fullName}!`}
-              </p>
-            </div>
-            {/* Action Buttons */}
-            <div className="flex gap-2">
-              {isAdmin && (
-                <button
-                  onClick={onCreateEventClick}
-                  className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm text-sm font-medium"
-                >
-                  <Plus className="w-4 h-4" />
-                  Create New Event
-                </button>
-              )}
-              {isAdmin && (
-                <>
-                  <button className="flex items-center gap-2 bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors shadow-sm text-sm font-medium">
-                    <Filter className="w-4 h-4" /> Filter
-                  </button>
-                  <button className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm text-sm font-medium">
-                    <Shield className="w-4 h-4" /> Security
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Tabs Navigation (Matches the component logic) */}
-          <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8 overflow-x-auto">
-              {currentTabs.map((tab) => {
-                const tabLower = tab.toLowerCase();
-                return (
-                  <button
-                    key={tab}
-                    onClick={() => {
-                      // If user clicks "Discover Events" tab, navigate to discover page
-                      if (tabLower.includes("discover")) {
-                        setCurrentPage("discover");
-                        setActiveTab(tabLower);
-                      } else if (children && !tabLower.includes("discover")) {
-                        // If children are shown (EventsDiscoveryPage) and user clicks a non-discover tab, navigate back to dashboard
-                        setCurrentPage("dashboard");
-                        setActiveTab(tabLower);
-                      } else {
-                        setActiveTab(tabLower);
-                      }
-                    }}
-                    className={`whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                      (children && tabLower.includes("discover")) ||
-                      (!children && activeTab === tabLower)
-                        ? "border-indigo-500 text-indigo-600"
-                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                    }`}
-                  >
-                    {tab}
-                  </button>
-                );
-              })}
-            </nav>
-          </div>
-
-          {/* Stats Grid - Always visible on Overview, maybe modified for others */}
-          {!children && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard
-                title={
-                  isStudent
-                    ? "Events Registered"
-                    : isAdmin
-                    ? "Events Registered"
-                    : "Total Events"
-                }
-                value={events.length}
-                //value={isStudent ? registrations.length : events.length}//
-                change="12%"
-                isPositive={true}
-                icon={<Calendar className="w-5 h-5" />}
-                color="bg-blue-500"
-              />
-              <StatCard
-                title={isAdmin ? "My College Events" : "Upcoming Events"}
-                value={
-                  isAdmin
-                    ? adminOwnedEvents.length
-                    : events.filter(
-                        (e) =>
-                          getEventStatus(e.startDate, e.endDate) === "upcoming"
-                      ).length
-                }
-                change="8%"
-                isPositive={true}
-                icon={
-                  isAdmin ? (
-                    <Calendar className="w-5 h-5" />
-                  ) : (
-                    <Activity className="w-5 h-5" />
-                  )
-                }
-                color="bg-green-500"
-              />
-              <StatCard
-                title={isStudent ? "Total Registrations" : "Total Participants"}
-                value={
-                  isStudent
-                    ? registrations.length
-                    : adminOwnedRegistrations.length
-                }
-                change="23%"
-                isPositive={true}
-                icon={<TrendingUp className="w-5 h-5" />}
-                color="bg-purple-500"
-              />
-              <StatCard
-                title={isAdmin ? "Pending Reviews" : "Approved Events"}
-                value={
-                  isAdmin
-                    ? adminOwnedRegistrations.filter(
-                        (r) => r.status === "pending"
-                      ).length
-                    : registrations.filter((r) => r.status === "approved")
-                        .length
-                }
-                change={isAdmin ? "-2%" : "0"}
-                isPositive={isStudent ? true : false}
-                icon={
-                  isAdmin ? (
-                    <AlertCircle className="w-5 h-5" />
-                  ) : (
-                    <CheckCircle className="w-5 h-5" />
-                  )
-                }
-                color={isStudent ? "bg-green-500" : "bg-orange-500"}
-              />
-            </div>
-          )}
-
-          {/* Main Content Sections */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-1">
-            <div
-              className={`${
-                children
-                  ? "lg:col-span-3"
-                  : isFullWidth
-                  ? "lg:col-span-3"
-                  : "lg:col-span-2"
-              } space-y-6`}
-            >
-              {/* Show children (EventsDiscoveryPage) if provided */}
-              {children ? (
-                children
-              ) : (
-                <>
-                  {/* Logic for switching tab content */}
-                  {activeTab === "overview" && (
-                    <>
-                      {isAdmin && (
-                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                          <h3 className="font-semibold text-gray-900 mb-4">
-                            Registration Trends
-                          </h3>
-                          <div className="h-64 w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                              {/* Using CHART_DATA from mock definition */}
-                              <LineChart data={data}>
-                                <CartesianGrid
-                                  strokeDasharray="3 3"
-                                  vertical={false}
-                                  stroke="#f3f4f6"
-                                />
-                                <XAxis
-                                  dataKey="name"
-                                  axisLine={false}
-                                  tickLine={false}
-                                  tick={{ fill: "#9ca3af", fontSize: 12 }}
-                                />
-                                <YAxis
-                                  axisLine={false}
-                                  tickLine={false}
-                                  tick={{ fill: "#9ca3af", fontSize: 12 }}
-                                />
-                                <Tooltip
-                                  contentStyle={{
-                                    backgroundColor: "#fff",
-                                    borderRadius: "8px",
-                                    border: "1px solid #e5e7eb",
-                                    boxShadow:
-                                      "0 4px 6px -1px rgb(0 0 0 / 0.1)",
-                                  }}
-                                  itemStyle={{ color: "#4f46e5" }}
-                                />
-                                <Line
-                                  type="monotone"
-                                  dataKey="participants"
-                                  stroke="#4f46e5"
-                                  strokeWidth={3}
-                                  dot={{
-                                    r: 4,
-                                    fill: "#4f46e5",
-                                    strokeWidth: 2,
-                                    stroke: "#fff",
-                                  }}
-                                />
-                              </LineChart>
-                            </ResponsiveContainer>
-                          </div>
-                        </div>
-                      )}
-                      <RecentEventsTable events={events} limit={5} />
-                    </>
-                  )}
-                  {activeTab === "user management" && <UserActivityTable />}
-                  {activeTab === "event management" && (
-                    <RecentEventsTable events={adminOwnedEvents} />
-                  )}
-                  {activeTab === "registrations" && (
-                    <RegistrationsTable
-                      registrations={
-                        isAdmin ? adminOwnedRegistrations : registrations
-                      }
-                    />
-                  )}
-                  {activeTab === "admin logs" && <AdminLogsTable />}
-                  {activeTab === "my events" && (
-                    <RegistrationsTable
-                      registrations={
-                        isAdmin ? adminOwnedRegistrations : registrations
-                      }
-                      showAdminActions={isAdmin}
-                    />
-                  )}
-                  {activeTab !== "overview" &&
-                    activeTab !== "user management" &&
-                    activeTab !== "event management" &&
-                    activeTab !== "registrations" &&
-                    activeTab !== "admin logs" &&
-                    activeTab !== "my events" && (
-                      <div className="bg-white p-12 rounded-xl shadow-sm border border-gray-100 text-center text-gray-500">
-                        <FileText className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                        <h3 className="text-lg font-medium text-gray-900">
-                          No content available
-                        </h3>
-                        <p>This section is under development.</p>
-                      </div>
-                    )}
-                </>
-              )}
-            </div>
-
-            {/* Sidebar Area - Only visible for Overview and when not showing children */}
-            {!isFullWidth && !children && (
-              <div className="space-y-6">
-                {activeTab === "overview" ? (
-                  <>
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                      <h3 className="font-semibold text-gray-900 mb-4">
-                        Quick Actions
-                      </h3>
-                      <div className="space-y-3">
-                        {isAdmin && (
-                          <button
-                            onClick={onCreateEventClick}
-                            className="w-full bg-indigo-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors flex justify-center items-center gap-2"
-                          >
-                            <Plus className="w-4 h-4" /> Create New Event
-                          </button>
-                        )}
-                        <button
-                          onClick={() => setActiveTab("my events")}
-                          className="w-full bg-gray-50 text-gray-700 py-2 px-4 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors border border-gray-200"
-                        >
-                          View All Registrations
-                        </button>
-
-                        <button
-                          onClick={handleExportData}
-                          className="w-full bg-gray-50 text-gray-700 py-2 px-4 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors border border-gray-200"
-                        >
-                          Export Event Data
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* system full box  */}
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                      <h3 className="font-semibold text-gray-900 mb-4">
-                        System Health
-                      </h3>
-                      <div className="space-y-4">
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-gray-500">Server Status</span>
-                          <span className="text-green-600 font-medium flex items-center gap-1">
-                            <CheckCircle className="w-3 h-3" /> Healthy
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-gray-500">Database</span>
-                          <span className="text-green-600 font-medium">
-                            Connected
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-gray-500">API Response</span>
-                          <span className="text-gray-900 font-medium">
-                            152ms
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-gray-500">Uptime</span>
-                          <span className="text-gray-900 font-medium">
-                            99.9%
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                    <h3 className="font-semibold text-gray-900 mb-4">
-                      Information
-                    </h3>
-                    <p className="text-sm text-gray-500 mb-4">
-                      Select an item from the main list to view more details
-                      here.
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      </main>
-    </div>
-  );
+  }
 }
 
-// Export the component as default for flexibility in imports
-export default Dashboard;
+@layer theme {
+  :root, :host {
+    --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    --spacing: .25rem;
+    --text-base: 1rem;
+    --text-lg: 1.125rem;
+    --text-xl: 1.25rem;
+    --text-2xl: 1.5rem;
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --default-font-family: var(--font-sans);
+    --default-font-feature-settings: var(--font-sans--font-feature-settings);
+    --default-font-variation-settings: var(--font-sans--font-variation-settings);
+    --default-mono-font-family: var(--font-mono);
+    --default-mono-font-feature-settings: var(--font-mono--font-feature-settings);
+    --default-mono-font-variation-settings: var(--font-mono--font-variation-settings);
+  }
+}
+
+@layer base {
+  *, :after, :before, ::backdrop {
+    box-sizing: border-box;
+    border: 0 solid;
+    margin: 0;
+    padding: 0;
+  }
+
+  ::file-selector-button {
+    box-sizing: border-box;
+    border: 0 solid;
+    margin: 0;
+    padding: 0;
+  }
+
+  html, :host {
+    -webkit-text-size-adjust: 100%;
+    tab-size: 4;
+    line-height: 1.5;
+    font-family: var(--default-font-family, ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");
+    font-feature-settings: var(--default-font-feature-settings, normal);
+    font-variation-settings: var(--default-font-variation-settings, normal);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    line-height: inherit;
+  }
+
+  hr {
+    height: 0;
+    color: inherit;
+    border-top-width: 1px;
+  }
+
+  abbr:where([title]) {
+    -webkit-text-decoration: underline dotted;
+    text-decoration: underline dotted;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-size: inherit;
+    font-weight: inherit;
+  }
+
+  a {
+    color: inherit;
+    -webkit-text-decoration: inherit;
+    -webkit-text-decoration: inherit;
+    text-decoration: inherit;
+  }
+
+  b, strong {
+    font-weight: bolder;
+  }
+
+  code, kbd, samp, pre {
+    font-family: var(--default-mono-font-family, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
+    font-feature-settings: var(--default-mono-font-feature-settings, normal);
+    font-variation-settings: var(--default-mono-font-variation-settings, normal);
+    font-size: 1em;
+  }
+
+  small {
+    font-size: 80%;
+  }
+
+  sub, sup {
+    vertical-align: baseline;
+    font-size: 75%;
+    line-height: 0;
+    position: relative;
+  }
+
+  sub {
+    bottom: -.25em;
+  }
+
+  sup {
+    top: -.5em;
+  }
+
+  table {
+    text-indent: 0;
+    border-color: inherit;
+    border-collapse: collapse;
+  }
+
+  :-moz-focusring {
+    outline: auto;
+  }
+
+  progress {
+    vertical-align: baseline;
+  }
+
+  summary {
+    display: list-item;
+  }
+
+  ol, ul, menu {
+    list-style: none;
+  }
+
+  img, svg, video, canvas, audio, iframe, embed, object {
+    display: block;
+  }
+
+  img, video {
+    max-width: 100%;
+    height: auto;
+  }
+
+  button, input, select, optgroup, textarea {
+    font: inherit;
+    font-feature-settings: inherit;
+    font-variation-settings: inherit;
+    letter-spacing: inherit;
+    color: inherit;
+    opacity: 1;
+    background-color: #0000;
+    border-radius: 0;
+  }
+
+  ::file-selector-button {
+    font: inherit;
+    font-feature-settings: inherit;
+    font-variation-settings: inherit;
+    letter-spacing: inherit;
+    color: inherit;
+    opacity: 1;
+    background-color: #0000;
+    border-radius: 0;
+  }
+
+  :where(select:is([multiple], [size])) optgroup {
+    font-weight: bolder;
+  }
+
+  :where(select:is([multiple], [size])) optgroup option {
+    padding-inline-start: 20px;
+  }
+
+  ::file-selector-button {
+    margin-inline-end: 4px;
+  }
+
+  ::placeholder {
+    opacity: 1;
+    color: currentColor;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    ::placeholder {
+      color: color-mix(in oklab, currentColor 50%, transparent);
+    }
+  }
+
+  textarea {
+    resize: vertical;
+  }
+
+  ::-webkit-search-decoration {
+    -webkit-appearance: none;
+  }
+
+  ::-webkit-date-and-time-value {
+    min-height: 1lh;
+    text-align: inherit;
+  }
+
+  ::-webkit-datetime-edit {
+    display: inline-flex;
+  }
+
+  ::-webkit-datetime-edit-fields-wrapper {
+    padding: 0;
+  }
+
+  ::-webkit-datetime-edit {
+    padding-block: 0;
+  }
+
+  ::-webkit-datetime-edit-year-field {
+    padding-block: 0;
+  }
+
+  ::-webkit-datetime-edit-month-field {
+    padding-block: 0;
+  }
+
+  ::-webkit-datetime-edit-day-field {
+    padding-block: 0;
+  }
+
+  ::-webkit-datetime-edit-hour-field {
+    padding-block: 0;
+  }
+
+  ::-webkit-datetime-edit-minute-field {
+    padding-block: 0;
+  }
+
+  ::-webkit-datetime-edit-second-field {
+    padding-block: 0;
+  }
+
+  ::-webkit-datetime-edit-millisecond-field {
+    padding-block: 0;
+  }
+
+  ::-webkit-datetime-edit-meridiem-field {
+    padding-block: 0;
+  }
+
+  :-moz-ui-invalid {
+    box-shadow: none;
+  }
+
+  button, input:where([type="button"], [type="reset"], [type="submit"]) {
+    appearance: button;
+  }
+
+  ::file-selector-button {
+    appearance: button;
+  }
+
+  ::-webkit-inner-spin-button {
+    height: auto;
+  }
+
+  ::-webkit-outer-spin-button {
+    height: auto;
+  }
+
+  [hidden]:where(:not([hidden="until-found"])) {
+    display: none !important;
+  }
+
+  * {
+    border-color: var(--border);
+    outline-color: var(--ring);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    * {
+      outline-color: color-mix(in oklab, var(--ring) 50%, transparent);
+    }
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+  }
+
+  * {
+    border-color: var(--border);
+    outline-color: var(--ring);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    * {
+      outline-color: color-mix(in oklab, var(--ring) 50%, transparent);
+    }
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) h1 {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) h2 {
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) h4 {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) p {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-normal);
+    line-height: 1.5;
+  }
+
+  :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) label, :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) button {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) input {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-normal);
+    line-height: 1.5;
+  }
+}
+
+@layer utilities {
+  .container {
+    width: 100%;
+  }
+
+  @media (width >= 40rem) {
+    .container {
+      max-width: 40rem;
+    }
+  }
+
+  @media (width >= 48rem) {
+    .container {
+      max-width: 48rem;
+    }
+  }
+
+  @media (width >= 64rem) {
+    .container {
+      max-width: 64rem;
+    }
+  }
+
+  @media (width >= 80rem) {
+    .container {
+      max-width: 80rem;
+    }
+  }
+
+  @media (width >= 96rem) {
+    .container {
+      max-width: 96rem;
+    }
+  }
+
+  .mt-5 {
+    margin-top: calc(var(--spacing) * 5);
+  }
+
+  .mb-4 {
+    margin-bottom: calc(var(--spacing) * 4);
+  }
+
+  .text-center {
+    text-align: center;
+  }
+
+  .filter {
+    filter: var(--tw-blur, ) var(--tw-brightness, ) var(--tw-contrast, ) var(--tw-grayscale, ) var(--tw-hue-rotate, ) var(--tw-invert, ) var(--tw-saturate, ) var(--tw-sepia, ) var(--tw-drop-shadow, );
+  }
+}
+
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+  overflow-x: hidden;
+}
+
+.app-container {
+  
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+.header-main {
+  z-index: 1000;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  background: #0f172acc;
+  border-bottom: 1px solid #94a3b84d;
+  padding: 0.5rem 0 !important;
+  height: auto !important;
+  box-sizing: border-box;
+  animation: .8s ease-out slideDown;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-100px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.logo-container {
+  align-items: center;
+  gap: .75rem;
+  animation: .6s ease-out .3s backwards scaleIn;
+  display: flex;
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.logo-icon-wrapper {
+  position: relative;
+}
+
+.logo-glow {
+  filter: blur(10px);
+  opacity: .5;
+  background: linear-gradient(to right, #3b82f6, #06b6d4);
+  border-radius: .75rem;
+  animation: 20s linear infinite rotate;
+  position: absolute;
+  inset: 0;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.logo-icon {
+  background: linear-gradient(135deg, #2563eb, #0891b2);
+  border-radius: .75rem;
+  padding: .5rem;
+  position: relative;
+}
+
+.logo-icon .icon {
+  color: #fff;
+  width: 24px;
+  height: 24px;
+}
+
+.logo-text {
+  align-items: center;
+  gap: .25rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  display: flex;
+}
+
+.logo-main {
+  color: #fff;
+  letter-spacing: -.025em;
+}
+
+.logo-accent {
+  background: linear-gradient(to right, #60a5fa, #22d3ee);
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.logo-sparkle {
+  animation: 2s ease-in-out infinite sparkle;
+  display: inline-flex;
+}
+
+@keyframes sparkle {
+  0%, 100% {
+    transform: scale(1)rotate(0);
+  }
+
+  25% {
+    transform: scale(1.2)rotate(10deg);
+  }
+
+  50% {
+    transform: scale(1)rotate(-10deg);
+  }
+
+  75% {
+    transform: scale(1.2)rotate(0);
+  }
+}
+
+.sparkle-icon {
+  color: #22d3ee;
+  width: 16px;
+  height: 16px;
+}
+
+.navbar-custom {
+  justify-content: flex-end;
+  display: flex;
+}
+
+.nav-list {
+  align-items: center;
+  gap: 1rem !important;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  list-style: none;
+  display: flex;
+  justify-content: flex-end ;
+}
+
+.nav-item {
+  animation: .5s ease-out backwards fadeInDown;
+}
+
+.nav-item:first-child {
+  animation-delay: .4s;
+}
+
+.nav-item:nth-child(2) {
+  animation-delay: .5s;
+}
+
+.nav-item:nth-child(3) {
+  animation-delay: .6s;
+}
+
+.nav-item:nth-child(4) {
+  animation-delay: .7s;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.nav-link {
+  color: #cbd5e1;
+  padding: .5rem 0;
+  text-decoration: none;
+  transition: all .3s;
+  display: inline-block;
+  position: relative;
+}
+
+.nav-link:hover {
+  color: #fff;
+  transform: translateY(-2px);
+}
+
+.nav-link:after {
+  content: "";
+  background: linear-gradient(to right, #60a5fa, #22d3ee);
+  width: 0;
+  height: 2px;
+  transition: width .3s;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+}
+
+.nav-link:hover:after {
+  width: 100%;
+}
+
+.btn-login {
+  background: linear-gradient(to right, #2563eb, #0891b2);
+  border-radius: 50px;
+  color: #fff !important;
+  padding: .5rem 1.5rem !important;
+}
+
+.btn-login:after {
+  display: none;
+}
+
+.btn-login:hover {
+  transform: scale(1.05)translateY(-2px);
+  box-shadow: 0 10px 25px #2563eb4d;
+}
+
+.hero-section {
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 100px 20px 50px;
+  display: flex;
+  position: relative;
+  overflow: hidden;
+}
+
+.particles-container {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.particle {
+  filter: blur(2px);
+  background: linear-gradient(to right, #60a5fa, #22d3ee);
+  border-radius: 50%;
+  width: 8px;
+  height: 8px;
+  animation: linear infinite float;
+  position: absolute;
+}
+
+@keyframes float {
+  0%, 100% {
+    opacity: 0;
+    transform: translate(0)scale(0);
+  }
+
+  50% {
+    transform: translate(var(--x, 50px), var(--y, 50px)) scale(1);
+    opacity: .4;
+  }
+}
+
+.orb {
+  filter: blur(80px);
+  border-radius: 50%;
+  position: absolute;
+}
+
+.orb-1 {
+  background: #2563eb33;
+  width: 400px;
+  height: 400px;
+  animation: 8s ease-in-out infinite float1;
+  top: 25%;
+  left: 25%;
+}
+
+.orb-2 {
+  background: #0891b233;
+  width: 400px;
+  height: 400px;
+  animation: 10s ease-in-out infinite float2;
+  bottom: 25%;
+  right: 25%;
+}
+
+@keyframes float1 {
+  0%, 100% {
+    transform: translate(0)scale(1);
+  }
+
+  50% {
+    transform: translate(50px, -30px)scale(1.2);
+  }
+}
+
+@keyframes float2 {
+  0%, 100% {
+    transform: translate(0)scale(1);
+  }
+
+  50% {
+    transform: translate(-50px, 50px)scale(1.3);
+  }
+}
+
+.hero-content {
+  z-index: 10;
+  position: relative;
+}
+
+.tagline {
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
+  color: #e2e8f0;
+  background: #1e293b99;
+  border: 1px solid #94a3b84d;
+  border-radius: 50px;
+  align-items: center;
+  gap: .5rem;
+  margin-bottom: 2rem;
+  padding: .5rem 1rem;
+  animation: .6s ease-out .5s backwards scaleIn;
+  display: inline-flex;
+}
+
+.tagline-icon {
+  color: #22d3ee;
+  width: 16px;
+  height: 16px;
+}
+
+.hero-title {
+  color: #fff;
+  margin-bottom: 1.5rem;
+  font-size: 4rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.title-line-1 {
+  animation: .8s ease-out .7s backwards slideInLeft;
+  display: block;
+}
+
+.title-line-2 {
+  background: linear-gradient(to right, #93c5fd, #67e8f9, #60a5fa);
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: .8s ease-out .9s backwards slideInRight;
+  display: block;
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-50px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(50px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.hero-subtitle {
+  color: #94a3b8;
+  max-width: 700px;
+  margin: 0 auto 3rem;
+  font-size: 1.25rem;
+  animation: .8s ease-out 1.1s backwards fadeInUp;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.cta-buttons {
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 5rem;
+  animation: .8s ease-out 1.3s backwards fadeInUp;
+  display: flex;
+}
+
+.btn-primary-custom {
+  color: #fff;
+  cursor: pointer;
+  background: linear-gradient(to right, #2563eb, #0891b2);
+  border: none;
+  border-radius: 50px;
+  align-items: center;
+  gap: .5rem;
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all .3s;
+  display: inline-flex;
+  box-shadow: 0 10px 25px #2563eb4d;
+}
+
+.btn-primary-custom:hover {
+  transform: scale(1.05);
+  box-shadow: 0 20px 40px #3b82f666;
+}
+
+.btn-icon {
+  width: 20px;
+  height: 20px;
+  animation: 1.5s ease-in-out infinite arrowSlide;
+}
+
+@keyframes arrowSlide {
+  0%, 100% {
+    transform: translateX(0);
+  }
+
+  50% {
+    transform: translateX(5px);
+  }
+}
+
+.btn-secondary-custom {
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
+  color: #fff;
+  cursor: pointer;
+  background: #1e293b99;
+  border: 1px solid #94a3b84d;
+  border-radius: 50px;
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all .3s;
+}
+
+.btn-secondary-custom:hover {
+  background: #1e293bcc;
+  transform: scale(1.05);
+}
+
+.feature-cards {
+  animation: .8s ease-out 1.5s backwards fadeInUp;
+}
+
+.feature-card {
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
+  cursor: pointer;
+  background: #1e293b66;
+  border: 1px solid #94a3b84d;
+  border-radius: 1.5rem;
+  height: 100%;
+  padding: 2rem;
+  transition: all .3s;
+  position: relative;
+  overflow: hidden;
+}
+
+.feature-card:before {
+  content: "";
+  opacity: 0;
+  background: linear-gradient(135deg, #2563eb00 0%, #0891b200 100%);
+  transition: opacity .3s;
+  position: absolute;
+  inset: 0;
+}
+
+.feature-card:hover {
+  background: #1e293b99;
+  transform: translateY(-10px)scale(1.03);
+}
+
+.feature-card:hover:before {
+  opacity: .1;
+}
+
+.feature-icon-wrapper {
+  background: linear-gradient(135deg, #2563eb, #0891b2);
+  border-radius: .75rem;
+  margin-bottom: 1.5rem;
+  padding: .75rem;
+  transition: transform .5s;
+  display: inline-flex;
+}
+
+.feature-card:hover .feature-icon-wrapper {
+  animation: .5s wiggle;
+}
+
+@keyframes wiggle {
+  0%, 100% {
+    transform: rotate(0);
+  }
+
+  25% {
+    transform: rotate(-10deg);
+  }
+
+  75% {
+    transform: rotate(10deg);
+  }
+}
+
+.feature-icon {
+  color: #fff;
+  width: 24px;
+  height: 24px;
+}
+
+.feature-title {
+  color: #fff;
+  margin-bottom: .75rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.feature-description {
+  color: #94a3b8;
+  margin: 0;
+  font-size: 1rem;
+}
+
+@media (width <= 768px) {
+  .hero-title {
+    font-size: 2.5rem;
+  }
+
+  .hero-subtitle {
+    font-size: 1rem;
+  }
+
+  .cta-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .btn-primary-custom, .btn-secondary-custom {
+    width: 100%;
+    max-width: 300px;
+  }
+
+  .navbar-custom {
+    justify-content: center;
+    margin-top: 1rem;
+  }
+
+  .nav-list {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+  }
+
+  .logo-container {
+    justify-content: center;
+  }
+
+  .orb-1, .orb-2 {
+    width: 250px;
+    height: 250px;
+  }
+}
+
+@media (width <= 576px) {
+  .hero-title {
+    font-size: 2rem;
+  }
+
+  .nav-list {
+    gap: .5rem;
+    font-size: .9rem;
+    justify-content: center !important;
+        margin-top: 0.5rem;
+  }
+  .header-main .row {
+        /* On small screens, force content to stack and fill the space */
+        flex-direction: column;
+        align-items: center;
+    }
+    .header-main .col-md-4,
+    .header-main .col-md-8 {
+        width: 100% !important;
+        text-align: center;
+    }
+
+  .logo-text {
+    font-size: 1rem;
+  }
+}
+
+.register-section {
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 120px 20px 50px;
+  display: flex;
+  position: relative;
+  overflow: hidden;
+}
+
+.register-content {
+    /* Ensures the content is in front of the background */
+    z-index: 10;
+    position: relative;
+
+    /* 🔑 CRITICAL FIX: Set a maximum width */
+    max-width: 500px; /* Adjust this value (500px is good for a form) */
+    
+    /* Ensure the content container is centered horizontally */
+    margin-left: auto;
+    margin-right: auto;
+    
+    /* Ensure no huge width overrides */
+    width: 100%;
+}
+
+.register-card {
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  background: #1e293b99;
+  border: 1px solid #94a3b84d;
+  border-radius: 1.5rem;
+  padding: 3rem;
+  animation: .8s ease-out fadeInUp;
+  box-shadow: 0 20px 60px #0000004d;
+}
+
+.register-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.register-title {
+  color: #fff;
+  background: linear-gradient(to right, #93c5fd, #67e8f9);
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: .5rem;
+  font-size: 2.5rem;
+  font-weight: 800;
+}
+
+.register-subtitle {
+  color: #94a3b8;
+  margin: 0;
+  font-size: 1rem;
+}
+
+.register-form {
+  margin-top: 2rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-label {
+  color: #e2e8f0;
+  align-items: center;
+  gap: .5rem;
+  margin-bottom: .5rem;
+  font-size: .95rem;
+  font-weight: 600;
+  display: flex;
+}
+
+.label-icon {
+  color: #22d3ee;
+  width: 16px;
+  height: 16px;
+}
+
+.custom-input {
+  color: #fff;
+  background: #0f172a80;
+  border: 1px solid #94a3b84d;
+  border-radius: .75rem;
+  padding: .875rem 1rem;
+  font-size: 1rem;
+  transition: all .3s;
+}
+
+.custom-input:focus {
+  color: #8a8383;
+  background: #0f172ab3;
+  border-color: #22d3ee;
+  outline: none;
+  box-shadow: 0 0 0 3px #22d3ee1a;
+}
+
+.custom-input::placeholder {
+  color: #64748b;
+}
+
+.custom-input option {
+  color: #fff;
+  background: #1e293b;
+}
+
+/* Force rounded corners inside auth cards regardless of Bootstrap resets */
+.register-card .form-control,
+.register-card .form-control.custom-input,
+.register-card input.custom-input,
+.register-card select.custom-input,
+.register-card textarea.custom-input {
+  border-radius: 12px !important;
+  --bs-border-radius: 12px;
+}
+
+/* Enforce dark background on auth inputs (idle + focus) to remove white */
+.register-card .form-control.custom-input,
+.register-card input.custom-input,
+.register-card select.custom-input,
+.register-card textarea.custom-input {
+  background-color: rgba(15, 23, 42, 0.5) !important; /* slate-900/50 */
+  color: #f8fafc !important; /* slate-50 */
+  border-color: rgba(148, 163, 184, 0.3) !important; /* slate-400/30 */
+}
+
+.register-card .form-control.custom-input:focus,
+.register-card input.custom-input:focus,
+.register-card select.custom-input:focus,
+.register-card textarea.custom-input:focus {
+  background-color: rgba(15, 23, 42, 0.7) !important; /* slate-900/70 */
+  color: #f8fafc !important;
+  border-color: #22d3ee !important; /* cyan-400 */
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.1) !important; /* ring */
+}
+
+/* Neutralize Chrome autofill white background in auth inputs */
+.register-card input.custom-input:-webkit-autofill,
+.register-card input.custom-input:-webkit-autofill:hover,
+.register-card input.custom-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #f8fafc !important;
+  transition: background-color 9999s ease-out 0s !important;
+  box-shadow: 0 0 0px 1000px rgba(15, 23, 42, 0.5) inset !important;
+}
+
+/* Normalize select to respect radius */
+.register-card select.custom-input {
+  appearance: none;
+  background-clip: padding-box;
+}
+
+.interest-chips {
+  flex-wrap: wrap;
+  gap: .75rem;
+  margin-top: .5rem;
+  display: flex;
+}
+
+.interest-chip {
+  color: #cbd5e1;
+  cursor: pointer;
+  background: #0f172a80;
+  border: 1px solid #94a3b84d;
+  border-radius: 50px;
+  padding: .5rem 1rem;
+  font-size: .9rem;
+  transition: all .3s;
+}
+
+.interest-chip:hover {
+  background: #2563eb33;
+  border-color: #60a5fa;
+  transform: translateY(-2px);
+}
+
+.interest-chip.active {
+  color: #fff;
+  background: linear-gradient(to right, #2563eb, #0891b2);
+  border-color: #0000;
+}
+
+.custom-checkbox {
+  display: flex;
+  align-items: start;
+  gap: 0.75rem;
+}
+
+.custom-checkbox .form-check-input {
+  width: 20px;
+  height: 20px;
+  margin-top: 0.125rem;
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 0.375rem;
+  cursor: pointer;
+
+  appearance: none;       /* remove default tick */
+  position: relative;     /* enable ::after tick */
+}
+
+.custom-checkbox .form-check-input:checked {
+  background: linear-gradient(to right, #2563eb, #0891b2);
+  border-color: transparent;
+}
+
+/* add tick */
+.custom-checkbox .form-check-input:checked::after {
+  content: "✔";
+  color: white;
+  font-size: 14px;
+  font-weight: bold;
+  position: absolute;
+  top: -1px;
+  left: 4px;
+}
+
+
+.terms-link {
+  color: #22d3ee;
+  text-decoration: none;
+  transition: color .3s;
+}
+
+.terms-link:hover {
+  color: #67e8f9;
+  text-decoration: underline;
+}
+
+.btn-register {
+  color: #fff;
+  cursor: pointer;
+  background: linear-gradient(to right, #2563eb, #0891b2);
+  border: none;
+  border-radius: .75rem;
+  justify-content: center;
+  align-items: center;
+  gap: .5rem;
+  width: 100%;
+  margin-top: 1rem;
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  transition: all .3s;
+  display: inline-flex;
+  box-shadow: 0 10px 25px #2563eb4d;
+}
+
+.btn-register:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 35px #3b82f666;
+}
+
+.login-link {
+  text-align: center;
+  color: #94a3b8;
+  margin-top: 1.5rem;
+  margin-bottom: 0;
+}
+
+.link-primary {
+  color: #22d3ee;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color .3s;
+}
+
+.link-primary:hover {
+  color: #67e8f9;
+  text-decoration: underline;
+}
+
+@media (width <= 768px) {
+  .register-card {
+    padding: 2rem 1.5rem;
+  }
+
+  .register-title {
+    font-size: 2rem;
+  }
+
+  .interest-chips {
+    gap: .5rem;
+  }
+
+  .interest-chip {
+    padding: .4rem .8rem;
+    font-size: .85rem;
+  }
+}
+
+.social-login {
+  flex-direction: column;
+  gap: .75rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+}
+
+.btn-social {
+  color: #fff;
+  cursor: pointer;
+  background: #0f172a80;
+  border: 1px solid #94a3b84d;
+  border-radius: .75rem;
+  justify-content: center;
+  align-items: center;
+  gap: .75rem;
+  width: 100%;
+  padding: .875rem 1rem;
+  font-size: 1rem;
+  transition: all .3s;
+  display: flex;
+}
+
+.btn-social:hover {
+  background: #0f172ab3;
+  border-color: #22d3ee;
+  transform: translateY(-2px);
+}
+
+.social-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.divider {
+  text-align: center;
+  margin: 1.5rem 0;
+  position: relative;
+}
+
+.divider:before {
+  content: "";
+  background: #94a3b84d;
+  height: 1px;
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+}
+
+.divider-text {
+  color: #94a3b8;
+  background: #1e293b99;
+  padding: 0 1rem;
+  font-size: .9rem;
+  display: inline-block;
+  position: relative;
+}
+
+.remember-forgot {
+  justify-content: space-between;
+  align-items: center;
+  display: flex;
+  margin-bottom: 1.5rem !important;
+}
+
+.forgot-link {
+  color: #22d3ee;
+  font-size: .95rem;
+  text-decoration: none;
+  transition: color .3s;
+}
+
+.forgot-link:hover {
+  color: #67e8f9;
+  text-decoration: underline;
+}
+
+.discover-section {
+  min-height: 100vh;
+  padding: 120px 20px 50px;
+  position: relative;
+  overflow: hidden;
+}
+
+.discover-content {
+  z-index: 10;
+  position: relative;
+}
+
+.discover-header {
+  text-align: center;
+  margin-bottom: 3rem;
+  animation: .8s ease-out fadeInUp;
+}
+
+.discover-title {
+  color: #fff;
+  background: linear-gradient(to right, #93c5fd, #67e8f9);
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: .75rem;
+  font-size: 3rem;
+  font-weight: 800;
+}
+
+.discover-subtitle {
+  color: #94a3b8;
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.search-filter-section {
+  margin-bottom: 3rem;
+  animation: .8s ease-out .2s backwards fadeInUp;
+}
+
+.search-box {
+  position: relative;
+}
+
+.search-icon {
+  color: #64748b;
+  pointer-events: none;
+  width: 20px;
+  height: 20px;
+  position: absolute;
+  top: 50%;
+  left: 1rem;
+  transform: translateY(-50%);
+}
+
+.search-input {
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  color: #fff;
+  background: #1e293b99;
+  border: 1px solid #94a3b84d;
+  border-radius: .75rem;
+  width: 100%;
+  padding: .875rem 1rem .875rem 3rem;
+  font-size: 1rem;
+  transition: all .3s;
+}
+
+.search-input:focus {
+  color: #fff;
+  background: #1e293bcc;
+  border-color: #22d3ee;
+  outline: none;
+  box-shadow: 0 0 0 3px #22d3ee1a;
+}
+
+.search-input::placeholder {
+  color: #64748b;
+}
+
+.btn-filter {
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  color: #fff;
+  cursor: pointer;
+  background: #1e293b99;
+  border: 1px solid #94a3b84d;
+  border-radius: .75rem;
+  justify-content: center;
+  align-items: center;
+  gap: .5rem;
+  width: 100%;
+  padding: .875rem 1rem;
+  font-size: 1rem;
+  transition: all .3s;
+  display: flex;
+}
+
+.btn-filter:hover {
+  background: #1e293bcc;
+  border-color: #22d3ee;
+  transform: translateY(-2px);
+}
+
+.filter-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.category-chips {
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: .75rem;
+  margin-top: 1.5rem;
+  display: flex;
+}
+
+.category-chip {
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  color: #cbd5e1;
+  cursor: pointer;
+  background: #1e293b99;
+  border: 1px solid #94a3b84d;
+  border-radius: 50px;
+  padding: .5rem 1.25rem;
+  font-size: .95rem;
+  transition: all .3s;
+}
+
+.category-chip:hover {
+  background: #2563eb33;
+  border-color: #60a5fa;
+  transform: translateY(-2px);
+}
+
+.category-chip.active {
+  color: #fff;
+  background: linear-gradient(to right, #2563eb, #0891b2);
+  border-color: #0000;
+}
+
+.events-grid {
+  animation: .8s ease-out .4s backwards fadeInUp;
+}
+
+.event-card {
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  background: #1e293b99;
+  border: 1px solid #94a3b84d;
+  border-radius: 1rem;
+  flex-direction: column;
+  height: 100%;
+  transition: all .3s;
+  display: flex;
+  overflow: hidden;
+}
+
+.event-card:hover {
+  border-color: #22d3ee;
+  transform: translateY(-10px);
+  box-shadow: 0 20px 40px #22d3ee33;
+}
+
+.event-image-wrapper {
+  width: 100%;
+  height: 200px;
+  position: relative;
+  overflow: hidden;
+}
+
+.event-image {
+  object-fit: cover;
+  width: 100%;
+  height: 100%;
+  transition: transform .3s;
+}
+
+.event-card:hover .event-image {
+  transform: scale(1.1);
+}
+
+.event-category-badge {
+  color: #fff;
+  text-transform: capitalize;
+  background: linear-gradient(to right, #2563eb, #0891b2);
+  border-radius: 50px;
+  padding: .25rem .75rem;
+  font-size: .85rem;
+  font-weight: 600;
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+}
+
+.event-content {
+  flex-direction: column;
+  flex: 1;
+  padding: 1.5rem;
+  display: flex;
+}
+
+.event-title {
+  color: #fff;
+  margin-bottom: .75rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.event-description {
+  color: #94a3b8;
+  flex: 1;
+  margin-bottom: 1rem;
+  font-size: .95rem;
+}
+
+.event-meta {
+  border-top: 1px solid #94a3b833;
+  flex-direction: column;
+  gap: .5rem;
+  margin-bottom: 1rem;
+  padding-top: 1rem;
+  display: flex;
+}
+
+.meta-item {
+  color: #cbd5e1;
+  align-items: center;
+  gap: .5rem;
+  font-size: .9rem;
+  display: flex;
+}
+
+.meta-icon {
+  color: #22d3ee;
+  width: 16px;
+  height: 16px;
+}
+
+.btn-event-details {
+  color: #fff;
+  cursor: pointer;
+  background: linear-gradient(to right, #2563eb, #0891b2);
+  border: none;
+  border-radius: .5rem;
+  justify-content: center;
+  align-items: center;
+  gap: .5rem;
+  width: 100%;
+  padding: .75rem 1rem;
+  font-size: .95rem;
+  font-weight: 600;
+  transition: all .3s;
+  display: flex;
+}
+
+.btn-event-details:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px #2563eb4d;
+}
+
+.btn-icon-small {
+  width: 16px;
+  height: 16px;
+}
+
+.no-events {
+  text-align: center;
+  color: #94a3b8;
+  padding: 4rem 2rem;
+  font-size: 1.25rem;
+}
+
+@media (width <= 768px) {
+  .discover-title {
+    font-size: 2rem;
+  }
+
+  .discover-subtitle {
+    font-size: 1rem;
+  }
+
+  .category-chips {
+    gap: .5rem;
+  }
+
+  .category-chip {
+    padding: .4rem .8rem;
+    font-size: .85rem;
+  }
+
+  .event-image-wrapper {
+    height: 180px;
+  }
+}
+
+:root {
+  --font-size: 16px;
+  --background: #fff;
+  --foreground: oklch(.145 0 0);
+  --card: #fff;
+  --card-foreground: oklch(.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(.145 0 0);
+  --primary: #030213;
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(.95 .0058 264.53);
+  --secondary-foreground: #030213;
+  --muted: #ececf0;
+  --muted-foreground: #717182;
+  --accent: #e9ebef;
+  --accent-foreground: #030213;
+  --destructive: #d4183d;
+  --destructive-foreground: #fff;
+  --border: #0000001a;
+  --input: transparent;
+  --input-background: #f3f3f5;
+  --switch-background: #cbced4;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --ring: oklch(.708 0 0);
+  --chart-1: oklch(.646 .222 41.116);
+  --chart-2: oklch(.6 .118 184.704);
+  --chart-3: oklch(.398 .07 227.392);
+  --chart-4: oklch(.828 .189 84.429);
+  --chart-5: oklch(.769 .188 70.08);
+  --radius: .625rem;
+  --sidebar: oklch(.985 0 0);
+  --sidebar-foreground: oklch(.145 0 0);
+  --sidebar-primary: #030213;
+  --sidebar-primary-foreground: oklch(.985 0 0);
+  --sidebar-accent: oklch(.97 0 0);
+  --sidebar-accent-foreground: oklch(.205 0 0);
+  --sidebar-border: oklch(.922 0 0);
+  --sidebar-ring: oklch(.708 0 0);
+}
+
+.dark {
+  --background: oklch(.145 0 0);
+  --foreground: oklch(.985 0 0);
+  --card: oklch(.145 0 0);
+  --card-foreground: oklch(.985 0 0);
+  --popover: oklch(.145 0 0);
+  --popover-foreground: oklch(.985 0 0);
+  --primary: oklch(.985 0 0);
+  --primary-foreground: oklch(.205 0 0);
+  --secondary: oklch(.269 0 0);
+  --secondary-foreground: oklch(.985 0 0);
+  --muted: oklch(.269 0 0);
+  --muted-foreground: oklch(.708 0 0);
+  --accent: oklch(.269 0 0);
+  --accent-foreground: oklch(.985 0 0);
+  --destructive: oklch(.396 .141 25.723);
+  --destructive-foreground: oklch(.637 .237 25.331);
+  --border: oklch(.269 0 0);
+  --input: oklch(.269 0 0);
+  --ring: oklch(.439 0 0);
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --chart-1: oklch(.488 .243 264.376);
+  --chart-2: oklch(.696 .17 162.48);
+  --chart-3: oklch(.769 .188 70.08);
+  --chart-4: oklch(.627 .265 303.9);
+  --chart-5: oklch(.645 .246 16.439);
+  --sidebar: oklch(.205 0 0);
+  --sidebar-foreground: oklch(.985 0 0);
+  --sidebar-primary: oklch(.488 .243 264.376);
+  --sidebar-primary-foreground: oklch(.985 0 0);
+  --sidebar-accent: oklch(.269 0 0);
+  --sidebar-accent-foreground: oklch(.985 0 0);
+  --sidebar-border: oklch(.269 0 0);
+  --sidebar-ring: oklch(.439 0 0);
+}
+
+html {
+  font-size: var(--font-size);
+}
+
+@property --tw-blur {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-brightness {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-contrast {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-grayscale {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-hue-rotate {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-invert {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-opacity {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-saturate {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-sepia {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-drop-shadow {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-drop-shadow-color {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-drop-shadow-alpha {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 100%;
+}
+
+@property --tw-drop-shadow-size {
+  syntax: "*";
+  inherits: false
+}
+/* Custom Scrollbar Styles for Notification Panel */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.3);
+  border-radius: 10px;
+  transition: background 0.3s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.5);
+}
+
+/* Dark mode scrollbar */
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.4);
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 92, 246, 0.6);
+}
+
+/* Firefox scrollbar */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99, 102, 241, 0.3) transparent;
+}
+
+.dark .custom-scrollbar {
+  scrollbar-color: rgba(139, 92, 246, 0.4) transparent;
+}
+
+/* Notification panel animations */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.notification-panel {
+  animation: slideInRight 0.2s ease-out;
+}
+
+/* Notification item hover effect */
+.notification-item {
+  position: relative;
+  overflow: hidden;
+}
+
+.notification-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.1), transparent);
+  transition: left 0.5s ease;
+}
+
+.notification-item:hover::before {
+  left: 100%;
+}
