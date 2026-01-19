@@ -1134,7 +1134,7 @@ body {
 }
 
 .custom-input:focus {
-  color: #fff;
+  color: #8a8383;
   background: #0f172ab3;
   border-color: #22d3ee;
   outline: none;
@@ -1148,6 +1148,52 @@ body {
 .custom-input option {
   color: #fff;
   background: #1e293b;
+}
+
+/* Force rounded corners inside auth cards regardless of Bootstrap resets */
+.register-card .form-control,
+.register-card .form-control.custom-input,
+.register-card input.custom-input,
+.register-card select.custom-input,
+.register-card textarea.custom-input {
+  border-radius: 12px !important;
+  --bs-border-radius: 12px;
+}
+
+/* Enforce dark background on auth inputs (idle + focus) to remove white */
+.register-card .form-control.custom-input,
+.register-card input.custom-input,
+.register-card select.custom-input,
+.register-card textarea.custom-input {
+  background-color: rgba(15, 23, 42, 0.5) !important; /* slate-900/50 */
+  color: #f8fafc !important; /* slate-50 */
+  border-color: rgba(148, 163, 184, 0.3) !important; /* slate-400/30 */
+}
+
+.register-card .form-control.custom-input:focus,
+.register-card input.custom-input:focus,
+.register-card select.custom-input:focus,
+.register-card textarea.custom-input:focus {
+  background-color: rgba(15, 23, 42, 0.7) !important; /* slate-900/70 */
+  color: #f8fafc !important;
+  border-color: #22d3ee !important; /* cyan-400 */
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.1) !important; /* ring */
+}
+
+/* Neutralize Chrome autofill white background in auth inputs */
+.register-card input.custom-input:-webkit-autofill,
+.register-card input.custom-input:-webkit-autofill:hover,
+.register-card input.custom-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #f8fafc !important;
+  transition: background-color 9999s ease-out 0s !important;
+  box-shadow: 0 0 0px 1000px rgba(15, 23, 42, 0.5) inset !important;
+}
+
+/* Normalize select to respect radius */
+.register-card select.custom-input {
+  appearance: none;
+  background-clip: padding-box;
 }
 
 .interest-chips {
@@ -1810,6 +1856,77 @@ html {
   syntax: "*";
   inherits: false
 }
+/* Custom Scrollbar Styles for Notification Panel */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
 
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
 
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.3);
+  border-radius: 10px;
+  transition: background 0.3s ease;
+}
 
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.5);
+}
+
+/* Dark mode scrollbar */
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.4);
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 92, 246, 0.6);
+}
+
+/* Firefox scrollbar */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99, 102, 241, 0.3) transparent;
+}
+
+.dark .custom-scrollbar {
+  scrollbar-color: rgba(139, 92, 246, 0.4) transparent;
+}
+
+/* Notification panel animations */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.notification-panel {
+  animation: slideInRight 0.2s ease-out;
+}
+
+/* Notification item hover effect */
+.notification-item {
+  position: relative;
+  overflow: hidden;
+}
+
+.notification-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.1), transparent);
+  transition: left 0.5s ease;
+}
+
+.notification-item:hover::before {
+  left: 100%;
+}
