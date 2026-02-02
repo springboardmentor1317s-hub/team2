@@ -161,7 +161,7 @@ interface DashboardProps {
   onCreateEventClick: () => void;
   onUpdateRegistrationStatus?: (
     id: string,
-    status: "approved" | "rejected"
+    status: "approved" | "rejected",
   ) => void;
   onDeleteEvent?: (eventId: string) => void;
   onDeleteUser?: (userId: string) => void;
@@ -221,6 +221,52 @@ export function Dashboard({
   const isAdmin = user.role === "admin";
   const isStudent = user.role === "student";
 
+  // 🔔 NEW: Notification State
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await fetch(`${BASE_URL}/api/notifications`, {
+        credentials: "include",
+      });
+      const result = await res.json();
+      if (result.success) setNotifications(result.data);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+    }
+  };
+
+  // Add this to your existing useEffect or create a new one
+  useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 30000); // Auto-refresh every 30s
+    return () => clearInterval(interval);
+  }, []);
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  const markAsRead = async (id: string) => {
+    try {
+            // Mark read
+      await fetch(`${BASE_URL}/api/notifications/${id}/read`, {
+        method: "PUT",
+        credentials: "include",
+      });
+
+      // Delete immediately (UI + DB)
+      await fetch(`${BASE_URL}/api/notifications/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      // Remove from state
+      setNotifications((prev) => prev.filter((n) => n._id !== id));
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   // 🔑 ADD THESE HELPER FUNCTIONS BACK:
   const getEventName = (id: string) =>
     events.find((e) => (e._id || e.id) === id)?.title || "Unknown Event";
@@ -236,7 +282,7 @@ export function Dashboard({
 
   const handleUpdateRegistrationStatus = async (
     id: string,
-    status: "approved" | "rejected"
+    status: "approved" | "rejected",
   ) => {
     try {
       const response = await fetch(
@@ -249,15 +295,17 @@ export function Dashboard({
           // 🔑 NEW: Add credentials: "include"
           credentials: "include",
           body: JSON.stringify({ status }),
-        }
+        },
       );
 
       if (response.ok) {
         // 🔑 Update local state immediately so the UI refreshes
         setRegistrations((prev) =>
           prev.map((reg) =>
-            reg._id === id ? { ...reg, status, reviewedBy: user.fullName } : reg
-          )
+            reg._id === id
+              ? { ...reg, status, reviewedBy: user.fullName }
+              : reg,
+          ),
         );
         toast.success(`Registration ${status}!`);
       }
@@ -306,7 +354,7 @@ export function Dashboard({
   // --- Calculation Stubs (Needed for StatCards) ---
   const totalParticipants = events.reduce(
     (sum, e) => sum + (e.participantsCount || 0),
-    0
+    0,
   );
   const averageParticipants =
     events.length > 0 ? (totalParticipants / events.length).toFixed(1) : "0";
@@ -315,7 +363,7 @@ export function Dashboard({
   const dashboardRegistrations = isStudent
     ? registrations.filter(
         (r) =>
-          r.userId === MOCK_ALL_USERS.find((u) => u.name === user.fullName)?.id
+          r.userId === MOCK_ALL_USERS.find((u) => u.name === user.fullName)?.id,
       )
     : registrations;
 
@@ -347,7 +395,7 @@ export function Dashboard({
 
   // 🔑 ADD THIS LINE: Filter events created ONLY by the current admin
   const myCreatedEvents = events.filter(
-    (event) => event.organizerId === user.id || event.adminId === user.id
+    (event) => event.organizerId === user.id || event.adminId === user.id,
   );
 
   // Create CSV content
@@ -371,11 +419,11 @@ export function Dashboard({
       // Filter the global registrations to find ones matching the admin's events
       rows = myCreatedEvents.map((event) => {
         const eventRegistrations = registrations.filter(
-          (r) => r.event?._id === event._id || r.eventId === event._id
+          (r) => r.event?._id === event._id || r.eventId === event._id,
         );
 
         const approvedCount = eventRegistrations.filter(
-          (r) => r.status === "approved"
+          (r) => r.status === "approved",
         ).length;
 
         return [
@@ -391,7 +439,7 @@ export function Dashboard({
 
       fileName = `Admin_Events_Report_${user.fullName.replace(
         /\s+/g,
-        "_"
+        "_",
       )}.csv`;
     } else {
       // --- STUDENT EXPORT: Events I have registered for ---
@@ -448,7 +496,7 @@ export function Dashboard({
       const resData = await res.json();
       if (res.ok) {
         setEvents((prev) =>
-          prev.filter((e) => String(e._id || e.id) !== String(eventId))
+          prev.filter((e) => String(e._id || e.id) !== String(eventId)),
         );
         toast.success(resData.message);
       } else {
@@ -462,7 +510,7 @@ export function Dashboard({
   // Submit edit
   const handleEditEventSubmit = async (
     eventId: string,
-    updated: Partial<any>
+    updated: Partial<any>,
   ) => {
     try {
       const payload = { ...updated };
@@ -483,8 +531,8 @@ export function Dashboard({
           prev.map((e) =>
             String(e._id || e.id) === String(eventId)
               ? { ...e, ...updatedEvent }
-              : e
-          )
+              : e,
+          ),
         );
         setIsEditOpen(false);
         setSelectedEvent(null);
@@ -597,9 +645,9 @@ export function Dashboard({
                       "upcoming"
                         ? "bg-blue-50 text-blue-600"
                         : getEventStatus(event.startDate, event.endDate) ===
-                          "ongoing"
-                        ? "bg-green-50 text-green-600"
-                        : "bg-gray-100 text-gray-600"
+                            "ongoing"
+                          ? "bg-green-50 text-green-600"
+                          : "bg-gray-100 text-gray-600"
                     }`}
                   >
                     {getEventStatus(event.startDate, event.endDate)}
@@ -671,8 +719,8 @@ export function Dashboard({
                         u.role === UserRole.STUDENT
                           ? "bg-blue-100 text-blue-700"
                           : u.role === UserRole.ADMIN
-                          ? "bg-purple-100 text-purple-700"
-                          : "bg-orange-100 text-orange-700"
+                            ? "bg-purple-100 text-purple-700"
+                            : "bg-orange-100 text-orange-700"
                       }`}
                     >
                       {u.name.charAt(0)}
@@ -790,8 +838,8 @@ export function Dashboard({
                           reg.status === "approved"
                             ? "bg-green-100 text-green-700"
                             : reg.status === "rejected"
-                            ? "bg-red-100 text-red-700"
-                            : "bg-yellow-100 text-yellow-700"
+                              ? "bg-red-100 text-red-700"
+                              : "bg-yellow-100 text-yellow-700"
                         }`}
                       >
                         {reg.status}
@@ -805,7 +853,7 @@ export function Dashboard({
                             onClick={() =>
                               handleUpdateRegistrationStatus(
                                 reg._id,
-                                "approved"
+                                "approved",
                               )
                             }
                             className="p-1 text-green-600 hover:bg-green-50 rounded"
@@ -816,7 +864,7 @@ export function Dashboard({
                             onClick={() =>
                               handleUpdateRegistrationStatus(
                                 reg._id,
-                                "rejected"
+                                "rejected",
                               )
                             }
                             className="p-1 text-red-600 hover:bg-red-50 rounded"
@@ -835,7 +883,7 @@ export function Dashboard({
                       ) : (
                         <div className="text-xs text-gray-600 font-medium">
                           {getCollegeName(
-                            reg.eventId || reg.event?._id || reg.event?.id
+                            reg.eventId || reg.event?._id || reg.event?.id,
                           )}
                         </div>
                       )}
@@ -1046,35 +1094,155 @@ export function Dashboard({
 
           {/* 🔑 NEW: Profile and Notification Icons (Always visible in collapsed state) */}
           <div className="mt-auto px-2 py-4 border-t border-gray-200 dark:border-gray-700">
-            {/* 1. Notification Bell - The entire button is the hover group */}
-            <button
-              className="group w-full flex items-center justify-center p-3 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors relative"
-              title="Notifications"
-            >
-              <Bell className="w-5 h-5 mx-auto" />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
-
-              {/* 🔑 FIXED TOOLTIP VISIBILITY AND POSITIONING */}
-              <span
-                className={`
-                    whitespace-nowrap absolute z-50 
-                    
-                    /* Positioning: Pin to the right of the sidebar's 5rem (w-20) width */
-                    left-full top-1/2 -translate-y-1/2 ml-2 
-
-                    /* Appearance: HIDDEN by default (opacity-0) */
-                    bg-gray-900 text-white text-xs px-2 py-1 rounded shadow-lg 
-                    opacity-0 
-                    
-                    /* 🚨 CRITICAL FIX: Only show text on HOVER AND when the sidebar IS collapsed */
-                    ${isCollapsed ? "group-hover:opacity-100" : "hidden"} 
-                    
-                    transition-opacity duration-300 pointer-events-none
-                `}
+            {/* 1. Notification Bell - Click to toggle */}
+            <div className="relative w-full">
+              <button
+                onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+                className="w-full flex items-center justify-center p-3 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 relative"
+                title="Notifications"
               >
-                3 New Alerts
-              </span>
-            </button>
+                <Bell
+                  className={`w-5 h-5 mx-auto transition-colors ${
+                    unreadCount > 0
+                      ? "text-indigo-600 dark:text-indigo-400 animate-pulse"
+                      : ""
+                  }`}
+                />
+                {unreadCount > 0 && (
+                  <span className="absolute top-2 right-4 w-5 h-5 bg-gradient-to-br from-red-500 to-red-600 text-white text-[10px] rounded-full flex items-center justify-center font-bold border-2 border-white dark:border-gray-800 shadow-lg animate-bounce">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {/* 🔑 DROPDOWN PANEL - Shows on Click */}
+              {isNotificationOpen && (
+                <div className="notification-panel absolute left-full bottom-10 ml-2 w-[500px] bg-white shadow-2xl rounded-2xl border border-gray-200 z-[100] overflow-hidden backdrop-blur-sm">
+                  {/* Header */}
+                  <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950 dark:to-purple-950">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="p-2 bg-white dark:bg-gray-700 rounded-lg shadow-sm">
+                          <Bell className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                        </div>
+                        <h3 className="font-bold text-base text-gray-900 dark:text-white">
+                          Notifications
+                        </h3>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {unreadCount > 0 && (
+                          <span className="text-xs bg-indigo-600 dark:bg-indigo-500 text-white px-3 py-1 rounded-full font-bold shadow-md">
+                            {unreadCount} New
+                          </span>
+                        )}
+                        <button
+                          onClick={() => setIsNotificationOpen(false)}
+                          className="p-1 hover:bg-white dark:hover:bg-gray-700 rounded-lg transition-colors"
+                          title="Close"
+                        >
+                          <XIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Notification List */}
+                  <div className="max-h-[500px] overflow-y-auto custom-scrollbar">
+                    {notifications.length === 0 ? (
+                      <div className="p-12 text-center">
+                        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
+                          <Bell className="w-8 h-8 text-gray-400" />
+                        </div>
+                        <p className="text-sm text-gray-500 font-medium">
+                          No notifications yet
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          We'll notify you when something arrives
+                        </p>
+                      </div>
+                    ) : (
+                      notifications.map((n) => (
+                        <div
+                          key={n._id}
+                          className={`notification-item p-4 border-b border-gray-100 cursor-pointer transition-all duration-200 hover:shadow-md bg-white ${
+                            !n.read
+                              ? "border-l-4 border-l-indigo-500 bg-gradient-to-r from-indigo-50/80 to-purple-50/80"
+                              : "hover:bg-gray-50"
+                          }`}
+                        >
+                          <div className="flex gap-3">
+                            {/* Icon */}
+                            <div
+                              className={`flex-shrink-0 mt-1 p-2.5 rounded-xl shadow-sm ${
+                                n.type === "approval"
+                                  ? "bg-gradient-to-br from-green-100 to-emerald-100 text-green-600"
+                                  : n.type === "rejection"
+                                    ? "bg-gradient-to-br from-red-100 to-rose-100 text-red-600"
+                                    : "bg-gradient-to-br from-blue-100 to-indigo-100 text-blue-600"
+                              }`}
+                            >
+                              {n.type === "approval" ? (
+                                <CheckCircle className="w-5 h-5" />
+                              ) : n.type === "rejection" ? (
+                                <XIcon className="w-5 h-5" />
+                              ) : (
+                                <Activity className="w-5 h-5" />
+                              )}
+                            </div>
+
+                            {/* Content */}
+                            <div className="flex-1 min-w-0">
+                              {/* Type Badge */}
+                              <div className="flex items-center gap-2 mb-1.5">
+                                <span
+                                  className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${
+                                    n.type === "approval"
+                                      ? "bg-green-100 text-green-700"
+                                      : n.type === "rejection"
+                                        ? "bg-red-100 text-red-700"
+                                        : "bg-blue-100 text-blue-700"
+                                  }`}
+                                >
+                                  {n.type === "approval"
+                                    ? "Approved"
+                                    : n.type === "rejection"
+                                      ? "Rejected"
+                                      : "New Request"}
+                                </span>
+                                {!n.read && (
+                                  <span className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></span>
+                                )}
+                              </div>
+
+                              {/* Message */}
+                              <p className="text-sm text-gray-800 leading-relaxed font-medium mb-2">
+                                {n.message}
+                              </p>
+
+                              {/* Timestamp + Action */}
+                              <div className="flex items-center justify-between gap-2 text-gray-500">
+                                <div className="flex items-center gap-1.5">
+                                  <Clock className="w-3.5 h-3.5" />
+                                  <span className="text-xs">
+                                    {formatDate(n.createdAt)}
+                                  </span>
+                                </div>
+                                <button
+                                  onClick={() => markAsRead(n._id)}
+                                  className="text-xs font-semibold px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 hover:bg-indigo-200 transition-colors"
+                                >
+                                  Mark as read
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* 2. Profile Icon/Picture */}
             <div className="w-full mt-2 flex justify-center">
@@ -1218,8 +1386,8 @@ export function Dashboard({
                     isStudent
                       ? "Events Registered"
                       : isAdmin
-                      ? "Events Registered"
-                      : "Total Events"
+                        ? "Events Registered"
+                        : "Total Events"
                   }
                   value={events.length}
                   //value={isStudent ? registrations.length : events.length}//
@@ -1236,7 +1404,7 @@ export function Dashboard({
                       : events.filter(
                           (e) =>
                             getEventStatus(e.startDate, e.endDate) ===
-                            "upcoming"
+                            "upcoming",
                         ).length
                   }
                   change="8%"
@@ -1269,7 +1437,7 @@ export function Dashboard({
                   value={
                     isAdmin
                       ? adminOwnedRegistrations.filter(
-                          (r) => r.status === "pending"
+                          (r) => r.status === "pending",
                         ).length
                       : registrations.filter((r) => r.status === "approved")
                           .length
@@ -1295,8 +1463,8 @@ export function Dashboard({
                   children
                     ? "lg:col-span-3"
                     : isFullWidth
-                    ? "lg:col-span-3"
-                    : "lg:col-span-2"
+                      ? "lg:col-span-3"
+                      : "lg:col-span-2"
                 } space-y-6`}
               >
                 {/* Show children (EventsDiscoveryPage) if provided */}
@@ -1500,11 +1668,11 @@ export function Dashboard({
           onSubmit={(updated) =>
             handleEditEventSubmit(
               selectedEvent._id || selectedEvent.id,
-              updated
+              updated,
             )
           }
           currentUserCollegeId={String(
-            (user as any).collegeId || selectedEvent.collegeId || ""
+            (user as any).collegeId || selectedEvent.collegeId || "",
           )}
           initialEvent={selectedEvent}
           mode="edit"
