@@ -123,7 +123,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
   // ======== UPDATE COMMENT ========
   const handleUpdateComment = async (commentId: string) => {
     if (!editingContent.trim()) {
-      alert("Comment cannot be empty");
+      toast.error("Comment cannot be empty");
       return;
     }
 
@@ -204,7 +204,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
   // ======== ADD REPLY ========
   const handleAddReply = async (commentId: string) => {
     if (!replyContent.trim()) {
-      alert("Please write a reply");
+      toast.error("Please write a reply");
       return;
     }
 
