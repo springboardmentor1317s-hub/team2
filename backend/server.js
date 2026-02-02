@@ -49,6 +49,8 @@ app.use("/api/registrations", require("./routes/registration"));
 app.use("/api/comments", commentRoutes);
 // Feedback routes (Get, Create)
 app.use("/api/feedback", require("./routes/feedback"));
+// Notifications routes
+app.use('/api/notifications', require('./routes/notification'));
 
 // --- Start Server ---
 app.listen(port, () => {
