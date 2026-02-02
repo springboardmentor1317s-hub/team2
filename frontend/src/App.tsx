@@ -1,6 +1,5 @@
 // frontend/src/App.tsx
-
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect} from "react";
 import { Header } from "./components/Header";
 // Assuming Hero is imported, as mentioned in your flow
 import { Hero } from "./components/Hero";
@@ -11,7 +10,7 @@ import { Dashboard } from "./components/Dashboard";
 import { EventsDiscoveryPage } from "./components/EventsDiscoveryPage";
 // Assuming these are needed elsewhere, keep them imported
 import EventForm from "./components/EventForm";
-import { EventCard } from "./components/EventCard";
+// import { EventCard } from "./components/EventCard";
 import ChatBot from "./components/chatbot";
 import WhatsAppBtn from "./components/WhatsAppBtn";
 import { Event } from "./types";
@@ -141,7 +140,7 @@ export default function App() {
     if (currentPage === "home" && theme !== "dark") {
       setThemeExplicit("dark");
     }
-  }, [currentPage, theme, setThemeExplicit]);
+  }, [currentPage, theme]);
 
   // --- Core Functions ---
   const handleLoginSuccess = (user: User) => {
