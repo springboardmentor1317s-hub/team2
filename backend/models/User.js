@@ -1,9 +1,8 @@
 // backend/models/User.js (FINALIZED VERSION)
-
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
-const UserSchema = new mongoose.Schema({
+const userSchema = new mongoose.Schema({
   fullName: {
     type: String,
     required: [true, "Please add a full name"],
@@ -60,22 +59,16 @@ const UserSchema = new mongoose.Schema({
 // --- Mongoose Middleware: Async Password Hashing ---
 // CRITICAL: Use the 'function' keyword to maintain 'this' context.
 // Mongoose implicitly handles the promise returned by this async function.
-UserSchema.pre("save", async function () {
-  // This hook runs before the document is saved.
-
+userSchema.pre("save", async function () {
   // Only hash the password if it's new or being modified
-  if (!this.isModified("password")) {
-    return;
-  }
-
+  if (!this.isModified("password")) return;
   // Hash password
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
+  this.password = await bcrypt.hash(this.password, 12);
 });
 
 // --- Custom Method for Login (No change needed, but included for completeness) ---
-UserSchema.methods.matchPassword = async function (enteredPassword) {
-  return await bcrypt.compare(enteredPassword, this.password);
+userSchema.methods.matchPassword = async function (userPassword) {
+  return await bcrypt.compare(userPassword, this.password);
 };
 
-module.exports = mongoose.model("User", UserSchema);
+module.exports = mongoose.model("User", userSchema);

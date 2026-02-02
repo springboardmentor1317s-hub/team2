@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const CommentSchema = new mongoose.Schema({
+const commentSchema = new mongoose.Schema({
     eventId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Event',
@@ -64,4 +64,4 @@ const CommentSchema = new mongoose.Schema({
     }
 });
 
-module.exports = mongoose.model('Comment', CommentSchema);
+module.exports = mongoose.model('Comment', commentSchema);
